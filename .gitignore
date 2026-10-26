@@ -1,0 +1,19 @@
+# compiled
+/dist
+/node_modules
+/coverage
+
+# env
+.env
+.env.*
+!.env.example
+
+# logs
+*.log
+
+# storage
+/storage
+
+# OS
+.DS_Store
+Thumbs.db

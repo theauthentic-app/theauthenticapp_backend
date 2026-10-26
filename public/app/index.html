@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AUTHENTIC Manufacturer</title>
+  <style>
+    :root { --bg:#07111c; --card:#0f1c2c; --line:#1f3348; --text:#e8eef6; --muted:#8ea0bb; --accent:#14b8a6; --danger:#f87171; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: Inter, Segoe UI, sans-serif; background:var(--bg); color:var(--text); }
+    header { display:flex; justify-content:space-between; align-items:center; padding:16px 22px; border-bottom:1px solid var(--line); }
+    h1 { font-size:18px; margin:0; letter-spacing:.08em; }
+    main { max-width:980px; margin:0 auto; padding:24px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:18px; margin:0 0 16px; }
+    label { display:block; font-size:12px; color:var(--muted); margin:10px 0 4px; }
+    input, select { width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--line); background:#0b1624; color:var(--text); }
+    button, .btn { background:var(--accent); color:#06201c; border:0; border-radius:999px; padding:10px 16px; font-weight:700; cursor:pointer; text-decoration:none; display:inline-block; }
+    button.ghost { background:transparent; color:var(--text); border:1px solid var(--line); }
+    .row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .muted { color:var(--muted); font-size:13px; }
+    .err { color:var(--danger); }
+    table { width:100%; border-collapse:collapse; font-size:13px; }
+    td, th { text-align:left; padding:8px 4px; border-bottom:1px solid var(--line); }
+    .stats { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+    .stat { background:#0b1624; border:1px solid var(--line); border-radius:12px; padding:12px; }
+    .stat b { display:block; font-size:22px; margin-top:4px; }
+    .bar { height:8px; background:#132033; border-radius:99px; overflow:hidden; }
+    .bar > i { display:block; height:100%; background:var(--accent); }
+    @media (max-width:720px) { .row, .stats { grid-template-columns:1fr 1fr; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>AUTHENTIC</h1>
+    <div id="who" class="muted"></div>
+  </header>
+  <main id="root"></main>
+  <script>
+    const API = '/api/v1';
+    const state = {
+      token: localStorage.getItem('atk') || '',
+      org: localStorage.getItem('org') || '',
+      me: null,
+    };
+
+    async function api(path, opts = {}) {
+      const headers = { ...(opts.json ? { 'Content-Type': 'application/json' } : {}), ...(opts.headers || {}) };
+      if (state.token) headers.Authorization = 'Bearer ' + state.token;
+      if (state.org) headers['x-organization-id'] = state.org;
+      const res = await fetch(API + path, { ...opts, headers, body: opts.json ? JSON.stringify(opts.json) : opts.body });
+      const text = await res.text();
+      let body = {};
+      try { body = text ? JSON.parse(text) : {}; } catch { body = { raw: text }; }
+      if (!res.ok) throw new Error(body.error?.message || body.message || res.statusText);
+      return body.data ?? body;
+    }
+
+    function html(strings, ...values) {
+      return strings.reduce((out, s, i) => out + s + (values[i] ?? ''), '');
+    }
+
+    function render() {
+      document.getElementById('who').textContent = state.me ? state.me.email : '';
+      document.getElementById('root').innerHTML = state.token ? dashboard() : auth();
+      bind();
+    }
+
+    function auth() {
+      return html`
+        <div class="card">
+          <h2>Manufacturer workspace</h2>
+          <p class="muted">Register a business, create products, mint identities, then print QR packs.</p>
+          <div class="row">
+            <form id="login">
+              <h3>Sign in</h3>
+              <label>Email</label><input name="email" type="email" required />
+              <label>Password</label><input name="password" type="password" required />
+              <p><button>Login</button></p>
+            </form>
+            <form id="register">
+              <h3>Register</h3>
+              <label>First name</label><input name="firstName" required />
+              <label>Last name</label><input name="lastName" required />
+              <label>Email</label><input name="email" type="email" required />
+              <label>Password (10+ chars)</label><input name="password" type="password" minlength="10" required />
+              <label>Organization</label><input name="organizationName" required />
+              <p><button>Create workspace</button></p>
+            </form>
+          </div>
+          <p class="err" id="auth-err"></p>
+        </div>`;
+    }
+
+    function dashboard() {
+      return html`
+        <div class="card">
+          <strong>Workspace</strong>
+          <p class="muted">Org: ${state.org || 'none'} · <button class="ghost" id="logout">Log out</button> · <a class="btn" href="/docs" target="_blank">Swagger</a> · <a class="btn" href="/scan" target="_blank">Consumer scan</a></p>
+        </div>
+        <div class="card">
+          <h3>Dashboard</h3>
+          <form id="analytics-filter" class="row">
+            <div>
+              <label>Days</label>
+              <select name="days">
+                <option value="7">7</option>
+                <option value="30" selected>30</option>
+                <option value="90">90</option>
+              </select>
+            </div>
+            <div><label>Product id</label><input name="productId" id="analyticsProductId" placeholder="optional" /></div>
+            <div><label>&nbsp;</label><button>Refresh</button></div>
+          </form>
+          <div class="stats" id="stats">
+            <div class="stat"><span class="muted">Scans</span><b id="m-scans">—</b></div>
+            <div class="stat"><span class="muted">Authenticated</span><b id="m-verified">—</b></div>
+            <div class="stat"><span class="muted">Alerts</span><b id="m-alerts">—</b></div>
+            <div class="stat"><span class="muted">Identities left</span><b id="m-quota">—</b></div>
+          </div>
+          <p class="muted" id="plan-line"></p>
+          <div class="bar" id="trend-bar" title="Scan volume"><i id="trend-fill" style="width:0"></i></div>
+          <table>
+            <thead><tr><th>When</th><th>Status</th><th>City</th><th>Product</th></tr></thead>
+            <tbody id="recent-scans"></tbody>
+          </table>
+        </div>
+        <div class="card">
+          <h3>1. Catalog</h3>
+          <form id="brand" class="row">
+            <div><label>Brand name</label><input name="name" required /></div>
+            <div><label>&nbsp;</label><button>Add brand</button></div>
+          </form>
+          <form id="product" class="row">
+            <div><label>Brand id</label><input name="brandId" id="brandId" /></div>
+            <div><label>Product name</label><input name="name" required /></div>
+            <div><label>SKU</label><input name="sku" required /></div>
+            <div><label>Category</label><input name="category" value="COSMETICS" /></div>
+            <div><label>&nbsp;</label><button>Add product</button></div>
+          </form>
+          <form id="batch" class="row">
+            <div><label>Product id</label><input name="productId" id="productId" /></div>
+            <div><label>Batch number</label><input name="batchNumber" required /></div>
+            <div><label>Mfg date</label><input name="manufacturingDate" type="date" required /></div>
+            <div><label>Quantity</label><input name="quantity" type="number" value="10" min="1" /></div>
+            <div><label>&nbsp;</label><button>Add batch</button></div>
+          </form>
+          <pre class="muted" id="catalog-out"></pre>
+        </div>
+        <div class="card">
+          <h3>2. Generate identities</h3>
+          <form id="generate" class="row">
+            <div><label>Batch id</label><input name="batchId" id="batchId" required /></div>
+            <div><label>Count</label><input name="count" type="number" value="1" min="1" /></div>
+            <div><label>&nbsp;</label><button>Mint identities</button></div>
+          </form>
+          <p id="export-links" class="muted"></p>
+          <pre class="muted" id="gen-out"></pre>
+        </div>
+        <div class="card">
+          <h3>3. Billing</h3>
+          <p class="muted">Add PAYSTACK_SECRET_KEY on the server to take card payments. Until then, subscribe creates an invoice for admin activation.</p>
+          <form id="subscribe" class="row">
+            <div>
+              <label>Plan</label>
+              <select name="planCode">
+                <option>STARTER</option>
+                <option>GROWTH</option>
+                <option>ENTERPRISE</option>
+              </select>
+            </div>
+            <div><label>Terms version</label><input name="acceptedTermsVersion" id="termsVersion" /></div>
+            <div><label>&nbsp;</label><button>Subscribe</button></div>
+          </form>
+          <p><button class="ghost" id="renew" type="button">Renew current plan</button></p>
+          <pre class="muted" id="bill-out"></pre>
+        </div>
+        <p class="err" id="dash-err"></p>`;
+    }
+
+    function bind() {
+      const login = document.getElementById('login');
+      if (login) login.onsubmit = async (e) => {
+        e.preventDefault();
+        try {
+          const fd = new FormData(login);
+          const data = await api('/auth/login', { method: 'POST', json: Object.fromEntries(fd) });
+          await afterAuth(data);
+        } catch (err) { document.getElementById('auth-err').textContent = err.message; }
+      };
+      const register = document.getElementById('register');
+      if (register) register.onsubmit = async (e) => {
+        e.preventDefault();
+        try {
+          const fd = new FormData(register);
+          const data = await api('/auth/register', { method: 'POST', json: Object.fromEntries(fd) });
+          await afterAuth(data);
+        } catch (err) { document.getElementById('auth-err').textContent = err.message; }
+      };
+      const logout = document.getElementById('logout');
+      if (logout) logout.onclick = () => {
+        state.token = ''; state.org = ''; state.me = null;
+        localStorage.removeItem('atk'); localStorage.removeItem('org');
+        render();
+      };
+      const brand = document.getElementById('brand');
+      if (brand) brand.onsubmit = async (e) => {
+        e.preventDefault();
+        try {
+          const data = await api('/brands', { method: 'POST', json: Object.fromEntries(new FormData(brand)) });
+          document.getElementById('brandId').value = data.id;
+          document.getElementById('catalog-out').textContent = JSON.stringify(data, null, 2);
+        } catch (err) { document.getElementById('dash-err').textContent = err.message; }
+      };
+      const product = document.getElementById('product');
+      if (product) product.onsubmit = async (e) => {
+        e.preventDefault();
+        try {
+          const data = await api('/products', { method: 'POST', json: Object.fromEntries(new FormData(product)) });
+          document.getElementById('productId').value = data.id;
+          document.getElementById('catalog-out').textContent = JSON.stringify(data, null, 2);
+        } catch (err) { document.getElementById('dash-err').textContent = err.message; }
+      };
+      const batch = document.getElementById('batch');
+      if (batch) batch.onsubmit = async (e) => {
+        e.preventDefault();
+        try {
+          const json = Object.fromEntries(new FormData(batch));
+          json.quantity = Number(json.quantity);
+          const data = await api('/batches', { method: 'POST', json });
+          document.getElementById('batchId').value = data.id;
+          document.getElementById('catalog-out').textContent = JSON.stringify(data, null, 2);
+        } catch (err) { document.getElementById('dash-err').textContent = err.message; }
+      };
+      const generate = document.getElementById('generate');
+      if (generate) generate.onsubmit = async (e) => {
+        e.preventDefault();
+        try {
+          const json = Object.fromEntries(new FormData(generate));
+          json.count = Number(json.count);
+          const data = await api('/product-identities/generate', { method: 'POST', json });
+          document.getElementById('gen-out').textContent = JSON.stringify(data, null, 2);
+          const batchId = json.batchId;
+          document.getElementById('export-links').innerHTML =
+            `<button type="button" class="btn" data-export="csv" data-batch="${batchId}">CSV</button>
+             <button type="button" class="btn" data-export="pdf" data-batch="${batchId}">PDF pack</button>` +
+            (data.identities?.[0] ? ` <button type="button" class="btn" data-label="${data.identities[0].publicId}">QR PNG</button> <a class="btn" href="/scan?code=${encodeURIComponent(data.identities[0].publicId)}" target="_blank">Verify</a>` : '');
+          document.querySelectorAll('[data-export]').forEach((btn) => {
+            btn.onclick = () => downloadExport(btn.dataset.export, btn.dataset.batch);
+          });
+          const label = document.querySelector('[data-label]');
+          if (label) label.onclick = () => downloadLabel(label.dataset.label);
+        } catch (err) { document.getElementById('dash-err').textContent = err.message; }
+      };
+      const subscribe = document.getElementById('subscribe');
+      if (subscribe) subscribe.onsubmit = async (e) => {
+        e.preventDefault();
+        try {
+          const data = await api('/billing/subscribe', { method: 'POST', json: Object.fromEntries(new FormData(subscribe)) });
+          document.getElementById('bill-out').textContent = JSON.stringify(data, null, 2);
+          if (data.payment?.authorizationUrl) location.href = data.payment.authorizationUrl;
+        } catch (err) { document.getElementById('dash-err').textContent = err.message; }
+      };
+      const renew = document.getElementById('renew');
+      if (renew) renew.onclick = async () => {
+        try {
+          const terms = document.getElementById('termsVersion').value;
+          const data = await api('/billing/renew', { method: 'POST', json: { acceptedTermsVersion: terms } });
+          document.getElementById('bill-out').textContent = JSON.stringify(data, null, 2);
+          if (data.payment?.authorizationUrl) location.href = data.payment.authorizationUrl;
+        } catch (err) { document.getElementById('dash-err').textContent = err.message; }
+      };
+      const analytics = document.getElementById('analytics-filter');
+      if (analytics) analytics.onsubmit = async (e) => {
+        e.preventDefault();
+        try { await loadAnalytics(Object.fromEntries(new FormData(analytics))); }
+        catch (err) { document.getElementById('dash-err').textContent = err.message; }
+      };
+    }
+
+    async function loadAnalytics(query = {}) {
+      const params = new URLSearchParams();
+      if (query.days) params.set('days', query.days);
+      if (query.productId) params.set('productId', query.productId);
+      const dash = await api('/analytics/dashboard?' + params.toString());
+      const set = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
+      set('m-scans', dash.totalScans ?? 0);
+      set('m-verified', dash.verified ?? 0);
+      set('m-alerts', dash.alerts ?? 0);
+      set('m-quota', dash.quota?.identities == null ? 'Unlimited' : dash.quota.identities);
+      const plan = document.getElementById('plan-line');
+      if (plan) plan.textContent = (dash.plan?.name || dash.plan?.code || '') + ' · ' + (dash.plan?.status || '');
+      const max = Math.max(1, ...(dash.trend || []).map((d) => d.scans));
+      const last = dash.trend?.[dash.trend.length - 1]?.scans || 0;
+      const fill = document.getElementById('trend-fill');
+      if (fill) fill.style.width = Math.round((last / max) * 100) + '%';
+      const body = document.getElementById('recent-scans');
+      if (body) body.innerHTML = (dash.recent || []).slice(0, 8).map((row) =>
+        `<tr><td>${new Date(row.createdAt).toLocaleString()}</td><td>${row.status}</td><td>${row.city || '—'}</td><td>${row.unit?.product?.name || '—'}</td></tr>`
+      ).join('') || '<tr><td colspan="4" class="muted">No scans in this range</td></tr>';
+    }
+
+    async function downloadExport(format, batchId) {
+      const headers = { Authorization: 'Bearer ' + state.token, 'x-organization-id': state.org };
+      const res = await fetch(`${API}/product-identities/export?format=${format}&batchId=${encodeURIComponent(batchId)}`, { headers });
+      if (!res.ok) throw new Error('Export failed');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = format === 'pdf' ? 'authentic-identities.pdf' : 'authentic-identities.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    async function downloadLabel(id) {
+      const headers = { Authorization: 'Bearer ' + state.token, 'x-organization-id': state.org };
+      const res = await fetch(`${API}/product-identities/${id}/label`, { headers });
+      if (!res.ok) throw new Error('Label failed');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = id + '.png';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    async function afterAuth(data) {
+      state.token = data.accessToken;
+      state.me = data.user;
+      localStorage.setItem('atk', state.token);
+      const orgs = data.organizations?.length ? data.organizations : await api('/organizations');
+      state.org = orgs[0]?.id || '';
+      if (state.org) localStorage.setItem('org', state.org);
+      render();
+      await hydrate();
+    }
+
+    async function hydrate() {
+      if (!state.token) return;
+      try {
+        const [brands, products, batches, terms, billing] = await Promise.all([
+          api('/brands'), api('/products'), api('/batches'), api('/public/legal/terms'), api('/billing'),
+        ]);
+        if (brands.items?.[0]) document.getElementById('brandId').value = brands.items[0].id;
+        if (products.items?.[0]) {
+          document.getElementById('productId').value = products.items[0].id;
+          const ap = document.getElementById('analyticsProductId');
+          if (ap && !ap.value) ap.placeholder = products.items[0].id;
+        }
+        if (batches.items?.[0]) document.getElementById('batchId').value = batches.items[0].id;
+        const tv = document.getElementById('termsVersion');
+        if (tv) tv.value = terms.version;
+        const bill = document.getElementById('bill-out');
+        if (bill) bill.textContent = JSON.stringify(billing, null, 2);
+        await loadAnalytics({ days: '30' });
+      } catch (err) {
+        const box = document.getElementById('dash-err');
+        if (box) box.textContent = err.message;
+      }
+    }
+
+    async function boot() {
+      const params = new URLSearchParams(location.search);
+      if (params.get('reference')) {
+        try { await api('/billing/paystack/verify?reference=' + encodeURIComponent(params.get('reference'))); } catch {}
+      }
+      if (state.token) {
+        try {
+          const me = await api('/auth/me');
+          state.me = me;
+          if (!state.org && me.organizations?.[0]) {
+            state.org = me.organizations[0].id;
+            localStorage.setItem('org', state.org);
+          }
+        } catch {
+          state.token = '';
+          localStorage.removeItem('atk');
+        }
+      }
+      render();
+      if (state.token) await hydrate();
+    }
+    boot();
+  </script>
+</body>
+</html>

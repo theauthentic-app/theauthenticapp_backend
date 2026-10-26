@@ -1,0 +1,916 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  LOCKED
+  DELETED
+}
+
+enum PlatformRole {
+  USER
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum OrganizationType {
+  MANUFACTURER
+  BRAND
+  DISTRIBUTOR
+  RETAILER
+  MARKETPLACE
+  LOGISTICS
+  REGULATOR
+  INSURER
+  OTHER
+}
+
+enum OrganizationStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  REJECTED
+}
+
+enum OrganizationMemberRole {
+  OWNER
+  ADMIN
+  MANAGER
+  ANALYST
+  STAFF
+  VIEWER
+}
+
+enum BrandVerificationStatus {
+  UNVERIFIED
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum BrandStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum ProductCategory {
+  PHARMACEUTICAL
+  AUTOMOTIVE
+  COSMETICS
+  ELECTRONICS
+  FMCG
+  FOOD
+  BOOKS
+  LUXURY
+  INDUSTRIAL
+  OTHER
+}
+
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+}
+
+enum BatchStatus {
+  ACTIVE
+  RECALLED
+  EXPIRED
+  SUSPENDED
+  CLOSED
+}
+
+enum IdentityStatus {
+  CREATED
+  ACTIVE
+  SUSPENDED
+  COMPROMISED
+  RECALLED
+  EXPIRED
+  REVOKED
+  DESTROYED
+}
+
+enum CredentialType {
+  QR
+  DATA_MATRIX
+  BARCODE
+  NFC
+  RFID
+  SERIAL
+  ISBN
+  DIGITAL_SIGNATURE
+  SECURITY_CODE
+  OTHER
+}
+
+enum CredentialStatus {
+  ACTIVE
+  REVOKED
+  COMPROMISED
+  EXPIRED
+}
+
+enum VerificationStatus {
+  AUTHENTICATED
+  SUSPICIOUS
+  COMPROMISED
+  RECALLED
+  EXPIRED
+  REVOKED
+  UNVERIFIED
+  NOT_FOUND
+}
+
+enum ScanSource {
+  CAMERA
+  MANUAL
+  WEB
+  API
+  POS
+  NFC
+  OTHER
+}
+
+enum ClientPlatform {
+  IOS
+  ANDROID
+  WEB
+  API
+  USSD
+  WHATSAPP
+  OTHER
+}
+
+enum RiskType {
+  DUPLICATE_CREDENTIAL
+  IMPOSSIBLE_TRAVEL
+  HIGH_SCAN_FREQUENCY
+  REVOKED_CREDENTIAL
+  INVALID_SIGNATURE
+  RECALLED_PRODUCT
+  EXPIRED_PRODUCT
+  UNEXPECTED_LOCATION
+  DISTRIBUTION_ANOMALY
+  OTHER
+}
+
+enum RiskSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum ReportReason {
+  COUNTERFEIT
+  PACKAGING
+  WRONG_INFO
+  EXPIRED
+  RECALLED
+  FAKE_SELLER
+  DUPLICATE_CODE
+  OTHER
+}
+
+enum ReportStatus {
+  OPEN
+  UNDER_REVIEW
+  CONFIRMED
+  DISMISSED
+  RESOLVED
+}
+
+enum RecallSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum RecallStatus {
+  DRAFT
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum WarrantyStatus {
+  PENDING
+  ACTIVE
+  EXPIRED
+  CLAIMED
+  VOID
+}
+
+enum SupplyChainEventType {
+  MANUFACTURED
+  PACKAGED
+  SHIPPED
+  RECEIVED
+  TRANSFERRED
+  SOLD
+  RETURNED
+  RECALLED
+}
+
+enum ApiKeyStatus {
+  ACTIVE
+  REVOKED
+  EXPIRED
+}
+
+enum WebhookEndpointStatus {
+  ACTIVE
+  PAUSED
+  DISABLED
+}
+
+enum WebhookDeliveryStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+enum NotificationChannel {
+  EMAIL
+  SMS
+  PUSH
+  IN_APP
+}
+
+enum NotificationStatus {
+  QUEUED
+  SENT
+  FAILED
+}
+
+enum FilePurpose {
+  PRODUCT_IMAGE
+  BRAND_LOGO
+  AVATAR
+  REPORT_EVIDENCE
+  VERIFICATION_EVIDENCE
+  DOCUMENT
+}
+
+enum AuditAction {
+  PRODUCT_CREATED
+  PRODUCT_UPDATED
+  PRODUCT_REVOKED
+  BATCH_CREATED
+  IDENTITY_GENERATED
+  IDENTITY_ACTIVATED
+  IDENTITY_REVOKED
+  RECALL_CREATED
+  ORGANIZATION_UPDATED
+  USER_ROLE_CHANGED
+  API_KEY_CREATED
+  API_KEY_REVOKED
+  BRAND_VERIFIED
+  WARRANTY_REGISTERED
+  WEBHOOK_CREATED
+  SUBSCRIPTION_UPDATED
+  BRAND_UPDATED
+}
+
+model User {
+  id              String     @id @default(cuid())
+  publicId        String     @unique
+  email           String     @unique
+  phone           String?    @unique
+  passwordHash    String
+  firstName       String
+  lastName        String
+  avatarFileId    String?
+  status          UserStatus @default(ACTIVE)
+  platformRole    PlatformRole @default(USER)
+  emailVerifiedAt DateTime?
+  phoneVerifiedAt DateTime?
+  lastLoginAt     DateTime?
+  failedLogins    Int        @default(0)
+  lockedUntil     DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  memberships      OrganizationMember[]
+  refreshTokens    RefreshToken[]
+  verifications    Verification[]
+  reports          ProductReport[]
+  warranties       Warranty[]
+  warrantyClaims   WarrantyClaim[]
+  notifications    Notification[]
+  auditLogs        AuditLog[]
+  passwordResets   PasswordReset[]
+  emailTokens      EmailVerificationToken[]
+  walletItems      WalletItem[]
+}
+
+model RefreshToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  replacedBy String?
+  createdAt DateTime  @default(now())
+  ipHash    String?
+  userAgent String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model PasswordReset {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model EmailVerificationToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Organization {
+  id                 String             @id @default(cuid())
+  publicId           String             @unique
+  name               String
+  slug               String             @unique
+  type               OrganizationType
+  status             OrganizationStatus @default(PENDING)
+  country            String             @default("NG")
+  city               String?
+  legalName          String?
+  registrationNumber String?
+  website            String?
+  verifiedAt         DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  members          OrganizationMember[]
+  brands           Brand[]
+  products         Product[]
+  batches          Batch[]
+  identities       ProductIdentity[]
+  apiKeys          ApiKey[]
+  webhooks         WebhookEndpoint[]
+  recalls          Recall[]
+  warranties       Warranty[]
+  supplyChainEvents SupplyChainEvent[]
+  inventoryItems   InventoryItem[]
+  auditLogs        AuditLog[]
+  files            StoredFile[]
+  subscription     Subscription?
+  payments         Payment[]
+  kycNotes         String?
+}
+
+model OrganizationMember {
+  id             String                 @id @default(cuid())
+  organizationId String
+  userId         String
+  role           OrganizationMemberRole @default(STAFF)
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([userId])
+}
+
+model Subscription {
+  id                   String   @id @default(cuid())
+  organizationId       String   @unique
+  planCode             String
+  status               String
+  currency             String   @default("NGN")
+  acceptedTermsVersion String?
+  acceptedTermsAt      DateTime?
+  trialEndsAt          DateTime?
+  currentPeriodStart     DateTime
+  currentPeriodEnd       DateTime
+  lastPaymentReference   String?
+  paymentProvider        String?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+model Payment {
+  id               String   @id @default(cuid())
+  organizationId   String
+  planCode         String
+  amountKobo       Int
+  currency         String   @default("NGN")
+  reference        String   @unique
+  status           String
+  provider         String
+  authorizationUrl String?
+  paidAt           DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, createdAt])
+  @@index([status])
+}
+
+model Brand {
+  id                 String                   @id @default(cuid())
+  publicId           String                   @unique
+  organizationId     String
+  name               String
+  slug               String
+  description        String?
+  logoFileId         String?
+  website            String?
+  verificationStatus BrandVerificationStatus  @default(UNVERIFIED)
+  status             BrandStatus              @default(ACTIVE)
+  createdAt          DateTime                 @default(now())
+  updatedAt          DateTime                 @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  products     Product[]
+
+  @@unique([organizationId, slug])
+  @@index([organizationId])
+}
+
+model Product {
+  id                String          @id @default(cuid())
+  publicId          String          @unique
+  organizationId    String
+  brandId           String
+  name              String
+  sku               String
+  gtin              String?
+  isbn              String?
+  category          ProductCategory
+  description       String?
+  countryOfOrigin   String          @default("NG")
+  specifications    Json?
+  metadata          Json?
+  status            ProductStatus   @default(DRAFT)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  organization Organization     @relation(fields: [organizationId], references: [id])
+  brand        Brand            @relation(fields: [brandId], references: [id])
+  variants     ProductVariant[]
+  images       ProductImage[]
+  recalls      RecallProduct[]
+
+  @@unique([organizationId, sku])
+  @@index([gtin])
+  @@index([isbn])
+  @@index([brandId])
+}
+
+model ProductImage {
+  id        String   @id @default(cuid())
+  productId String
+  fileId    String
+  sortOrder Int      @default(0)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model ProductVariant {
+  id          String   @id @default(cuid())
+  publicId    String   @unique
+  productId   String
+  name        String
+  sku         String
+  gtin        String?
+  attributes  Json?
+  packaging   Json?
+  dimensions  Json?
+  weightGrams Int?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  product    Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
+  batches    Batch[]
+  identities ProductIdentity[]
+
+  @@unique([productId, sku])
+  @@index([gtin])
+}
+
+model Batch {
+  id                 String      @id @default(cuid())
+  publicId           String      @unique
+  organizationId     String
+  productVariantId   String
+  batchNumber        String
+  manufacturingDate  DateTime
+  expiryDate         DateTime?
+  quantity           Int
+  status             BatchStatus @default(ACTIVE)
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  organization   Organization      @relation(fields: [organizationId], references: [id])
+  productVariant ProductVariant    @relation(fields: [productVariantId], references: [id])
+  identities     ProductIdentity[]
+  recallBatches  RecallBatch[]
+
+  @@unique([organizationId, batchNumber])
+  @@index([productVariantId])
+  @@index([status])
+}
+
+model ProductIdentity {
+  id                 String         @id @default(cuid())
+  publicId           String         @unique
+  serialNumber       String
+  organizationId     String
+  productVariantId   String
+  batchId            String
+  status             IdentityStatus @default(CREATED)
+  manufactureCountry String?
+  manufactureCity    String?
+  signature          String
+  activatedAt        DateTime?
+  revokedAt          DateTime?
+  compromisedAt      DateTime?
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  organization   Organization      @relation(fields: [organizationId], references: [id])
+  productVariant ProductVariant    @relation(fields: [productVariantId], references: [id])
+  batch          Batch             @relation(fields: [batchId], references: [id])
+  credentials    Credential[]
+  verifications  Verification[]
+  riskSignals    RiskSignal[]
+  reports        ProductReport[]
+  warranties     Warranty[]
+  supplyEvents   SupplyChainEvent[]
+  inventoryItems InventoryItem[]
+  walletItems    WalletItem[]
+
+  @@unique([productVariantId, serialNumber])
+  @@index([serialNumber])
+  @@index([batchId])
+  @@index([status])
+  @@index([organizationId])
+}
+
+model Credential {
+  id                String           @id @default(cuid())
+  publicId          String           @unique
+  productIdentityId String
+  type              CredentialType
+  valueHash         String
+  valueHint         String
+  status            CredentialStatus @default(ACTIVE)
+  revokedAt         DateTime?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  productIdentity ProductIdentity @relation(fields: [productIdentityId], references: [id], onDelete: Cascade)
+  verifications   Verification[]
+
+  @@unique([type, valueHash])
+  @@index([valueHint])
+  @@index([productIdentityId])
+}
+
+model Verification {
+  id                String             @id @default(cuid())
+  publicId          String             @unique
+  productIdentityId String?
+  credentialId      String?
+  userId            String?
+  organizationId    String?
+  status            VerificationStatus
+  trustScore        Int
+  reasons           Json
+  signals           Json
+  warnings          Json
+  source            ScanSource         @default(MANUAL)
+  platform          ClientPlatform     @default(WEB)
+  country           String?
+  region            String?
+  city              String?
+  latitude          Float?
+  longitude         Float?
+  ipHash            String?
+  deviceHash        String?
+  createdAt         DateTime           @default(now())
+
+  productIdentity ProductIdentity? @relation(fields: [productIdentityId], references: [id])
+  credential      Credential?      @relation(fields: [credentialId], references: [id])
+  user            User?            @relation(fields: [userId], references: [id])
+  riskSignals     RiskSignal[]
+
+  @@index([productIdentityId, createdAt])
+  @@index([createdAt])
+  @@index([status])
+  @@index([publicId])
+}
+
+model RiskSignal {
+  id                String       @id @default(cuid())
+  type              RiskType
+  severity          RiskSeverity
+  scoreImpact       Int
+  evidence          Json
+  verificationId    String
+  productIdentityId String?
+  detectedAt        DateTime     @default(now())
+
+  verification    Verification     @relation(fields: [verificationId], references: [id], onDelete: Cascade)
+  productIdentity ProductIdentity? @relation(fields: [productIdentityId], references: [id])
+
+  @@index([productIdentityId])
+  @@index([type, detectedAt])
+}
+
+model WalletItem {
+  id                String   @id @default(cuid())
+  userId            String
+  productIdentityId String
+  createdAt         DateTime @default(now())
+
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productIdentity ProductIdentity @relation(fields: [productIdentityId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productIdentityId])
+  @@index([userId])
+}
+
+model ProductReport {
+  id                String       @id @default(cuid())
+  publicId          String       @unique
+  productIdentityId String?
+  userId            String?
+  reason            ReportReason
+  description       String?
+  city              String?
+  country           String?
+  status            ReportStatus @default(OPEN)
+  reviewOutcome     String?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  productIdentity ProductIdentity? @relation(fields: [productIdentityId], references: [id])
+  user            User?            @relation(fields: [userId], references: [id])
+  files           ReportFile[]
+
+  @@index([status])
+}
+
+model ReportFile {
+  id       String @id @default(cuid())
+  reportId String
+  fileId   String
+
+  report ProductReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+}
+
+model Recall {
+  id             String         @id @default(cuid())
+  publicId       String         @unique
+  organizationId String
+  recallNumber   String
+  reason         String
+  instructions   String?
+  severity       RecallSeverity
+  status         RecallStatus   @default(DRAFT)
+  startDate      DateTime
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  organization Organization   @relation(fields: [organizationId], references: [id])
+  products     RecallProduct[]
+  batches      RecallBatch[]
+
+  @@unique([organizationId, recallNumber])
+}
+
+model RecallProduct {
+  recallId  String
+  productId String
+
+  recall  Recall  @relation(fields: [recallId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([recallId, productId])
+}
+
+model RecallBatch {
+  recallId String
+  batchId  String
+
+  recall Recall @relation(fields: [recallId], references: [id], onDelete: Cascade)
+  batch  Batch  @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@id([recallId, batchId])
+}
+
+model Warranty {
+  id                String         @id @default(cuid())
+  publicId          String         @unique
+  productIdentityId String
+  organizationId    String
+  ownerUserId       String?
+  startDate         DateTime
+  endDate           DateTime
+  status            WarrantyStatus @default(PENDING)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  productIdentity ProductIdentity @relation(fields: [productIdentityId], references: [id])
+  organization    Organization    @relation(fields: [organizationId], references: [id])
+  owner           User?           @relation(fields: [ownerUserId], references: [id])
+  claims          WarrantyClaim[]
+
+  @@index([productIdentityId])
+}
+
+model WarrantyClaim {
+  id         String   @id @default(cuid())
+  warrantyId String
+  userId     String
+  summary    String
+  status     String   @default("OPEN")
+  createdAt  DateTime @default(now())
+
+  warranty Warranty @relation(fields: [warrantyId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id])
+}
+
+model SupplyChainEvent {
+  id                String                @id @default(cuid())
+  productIdentityId String
+  organizationId    String
+  type              SupplyChainEventType
+  occurredAt        DateTime              @default(now())
+  location          String?
+  metadata          Json?
+  createdAt         DateTime              @default(now())
+
+  productIdentity ProductIdentity @relation(fields: [productIdentityId], references: [id])
+  organization    Organization    @relation(fields: [organizationId], references: [id])
+
+  @@index([productIdentityId, occurredAt])
+}
+
+model InventoryItem {
+  id                String   @id @default(cuid())
+  organizationId    String
+  productIdentityId String
+  location          String?
+  scannedAt         DateTime @default(now())
+
+  organization    Organization    @relation(fields: [organizationId], references: [id])
+  productIdentity ProductIdentity @relation(fields: [productIdentityId], references: [id])
+
+  @@unique([organizationId, productIdentityId])
+}
+
+model ApiKey {
+  id             String       @id @default(cuid())
+  organizationId String
+  name           String
+  prefix         String
+  secretHash     String       @unique
+  scopes         String[]
+  status         ApiKeyStatus @default(ACTIVE)
+  expiresAt      DateTime?
+  lastUsedAt     DateTime?
+  createdAt      DateTime     @default(now())
+  revokedAt      DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([prefix])
+}
+
+model WebhookEndpoint {
+  id                   String                @id @default(cuid())
+  organizationId       String
+  url                  String
+  secret               String
+  events               String[]
+  status               WebhookEndpointStatus @default(ACTIVE)
+  consecutiveFailures  Int                   @default(0)
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+
+  organization Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  deliveries   WebhookDelivery[]
+}
+
+model WebhookDelivery {
+  id            String                @id @default(cuid())
+  endpointId    String
+  eventId       String
+  eventType     String
+  payload       Json
+  status        WebhookDeliveryStatus @default(PENDING)
+  attempts      Int                   @default(0)
+  httpStatus    Int?
+  nextAttemptAt DateTime              @default(now())
+  lastError     String?
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+
+  endpoint WebhookEndpoint @relation(fields: [endpointId], references: [id], onDelete: Cascade)
+
+  @@index([eventId])
+  @@index([status])
+  @@index([status, nextAttemptAt])
+}
+
+model Notification {
+  id        String              @id @default(cuid())
+  userId    String
+  channel   NotificationChannel
+  title     String
+  body      String
+  status    NotificationStatus  @default(QUEUED)
+  metadata  Json?
+  createdAt DateTime            @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model StoredFile {
+  id             String      @id @default(cuid())
+  organizationId String?
+  purpose        FilePurpose
+  key            String      @unique
+  mimeType       String
+  sizeBytes      Int
+  originalName   String
+  createdAt      DateTime    @default(now())
+
+  organization Organization? @relation(fields: [organizationId], references: [id])
+}
+
+model AuditLog {
+  id             String      @id @default(cuid())
+  action         AuditAction
+  actorUserId    String?
+  organizationId String?
+  entity         String
+  entityId       String?
+  metadata       Json?
+  createdAt      DateTime    @default(now())
+
+  actor        User?         @relation(fields: [actorUserId], references: [id])
+  organization Organization? @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId, createdAt])
+  @@index([action])
+}
+
+model IdempotencyKey {
+  id             String   @id @default(cuid())
+  key            String
+  organizationId String?
+  method         String
+  path           String
+  responseCode   Int
+  responseBody   Json
+  createdAt      DateTime @default(now())
+
+  @@unique([key, method, path])
+  @@index([createdAt])
+}
+
+model TrustScoreWeight {
+  id        String   @id @default(cuid())
+  signal    String   @unique
+  weight    Int
+  updatedAt DateTime @updatedAt
+}

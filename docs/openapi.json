@@ -1,0 +1,3377 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/health": {
+      "get": {
+        "operationId": "HealthController_check",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Application, database and Redis health",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/auth/register": {
+      "post": {
+        "operationId": "AuthController_register",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "Register a consumer or manufacturer account",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "operationId": "AuthController_login",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Login with email and password",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "operationId": "AuthController_refresh",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Rotate a refresh token",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "operationId": "AuthController_logout",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Revoke a refresh token",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/verify-email": {
+      "post": {
+        "operationId": "AuthController_verifyEmail",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyEmailDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/resend-verification": {
+      "post": {
+        "operationId": "AuthController_resendVerification",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForgotPasswordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Resend the email verification link",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/forgot-password": {
+      "post": {
+        "operationId": "AuthController_forgotPassword",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForgotPasswordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/reset-password": {
+      "post": {
+        "operationId": "AuthController_resetPassword",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetPasswordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "operationId": "AuthController_me",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Current user profile and organizations",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/organizations": {
+      "post": {
+        "operationId": "OrganizationsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOrganizationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create an organization and become owner",
+        "tags": [
+          "organizations"
+        ]
+      },
+      "get": {
+        "operationId": "OrganizationsController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List organizations for the signed-in user",
+        "tags": [
+          "organizations"
+        ]
+      }
+    },
+    "/organizations/members": {
+      "get": {
+        "operationId": "OrganizationsController_listMembers",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "x-organization-id",
+            "in": "header",
+            "description": "Organization public id. Required for JWT callers; implied by API key.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Missing or invalid JWT / API key"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "bearer": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List organization members",
+        "tags": [
+          "organizations"
+        ]
+      },
+      "post": {
+        "operationId": "OrganizationsController_addMember",
+        "parameters": [
+          {
+            "name": "x-organization-id",
+            "in": "header",
+            "description": "Organization public id. Required for JWT callers; implied by API key.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddMemberDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "401": {
+            "description": "Missing or invalid JWT / API key"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "bearer": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Add or update an organization member",
+        "tags": [
+          "organizations"
+        ]
+      }
+    },
+    "/organizations/{id}": {
+      "get": {
+        "operationId": "OrganizationsController_get",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get an organization the user belongs to",
+        "tags": [
+          "organizations"
+        ]
+      }
+    },
+    "/brands": {
+      "post": {
+        "operationId": "CatalogController_createBrand",
+        "parameters": [
+          {
+            "name": "x-organization-id",
+            "in": "header",
+            "description": "Organization public id. Required for JWT callers; implied by API key.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBrandDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "401": {
+            "description": "Missing or invalid JWT / API key"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Create a brand",
+        "tags": [
+          "catalog"
+        ]
+      },
+      "get": {
+        "operationId": "CatalogController_listBrands",
+        "parameters": [
+          {
+            "name": "x-organization-id",
+            "in": "header",
+            "description": "Organization public id. Required for JWT callers; implied by API key.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "401": {
+            "description": "Missing or invalid JWT / API key"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List brands",
+        "tags": [
+          "catalog"
+        ]
+      }
+    },
+    "/products": {
+      "post": {
+        "operationId": "CatalogController_createProduct",
+        "parameters": [
+          {
+            "name": "x-organization-id",
+            "in": "header",
+            "description": "Organization public id. Required for JWT callers; implied by API key.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProductDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "401": {
+            "description": "Missing or invalid JWT / API key"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Create a product",
+        "tags": [
+          "catalog"
+        ]
+      },
+      "get": {
+        "operationId": "CatalogController_listProducts",
+        "parameters": [
+          {
+            "name": "x-organization-id",
+            "in": "header",
+            "description": "Organization public id. Required for JWT callers; implied by API key.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "401": {
+            "description": "Missing or invalid JWT / API key"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List products",
+        "tags": [
+          "catalog"
+        ]
+      }
+    },
+    "/batches": {
+      "get": {
+        "operationId": "CatalogController_listBatches",
+        "parameters": [
+          {
+            "name": "x-organization-id",
+            "in": "header",
+            "description": "Organization public id. Required for JWT callers; implied by API key.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "401": {
+            "description": "Missing or invalid JWT / API key"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List batches",
+        "tags": [
+          "catalog"
+        ]
+      },
+      "post": {
+        "operationId": "CatalogController_createBatch",
+        "parameters": [
+          {
+            "name": "x-organization-id",
+            "in": "header",
+            "description": "Organization public id. Required for JWT callers; implied by API key.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBatchDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "401": {
+            "description": "Missing or invalid JWT / API key"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Create a manufacturing batch",
+        "tags": [
+          "catalog"
+        ]
+      }
+    },
+    "/products/{id}": {
+      "get": {
+        "operationId": "CatalogController_getProduct",
+        "parameters": [
+          {
+            "name": "x-organization-id",
+            "in": "header",
+            "description": "Organization public id. Required for JWT callers; implied by API key.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "401": {
+            "description": "Missing or invalid JWT / API key"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Public product record by public id",
+        "tags": [
+          "catalog"
+        ]
+      }
+    },
+    "/products/{id}/images": {
+      "post": {
+        "operationId": "CatalogController_uploadProductImage",
+        "parameters": [
+          {
+            "name": "x-organization-id",
+            "in": "header",
+            "description": "Organization public id. Required for JWT callers; implied by API key.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "401": {
+            "description": "Missing or invalid JWT / API key"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Upload a product image to Cloudflare R2 or local storage",
+        "tags": [
+          "catalog"
+        ]
+      }
+    },
+    "/product-variants": {
+      "post": {
+        "operationId": "CatalogController_createVariant",
+        "parameters": [
+          {
+            "name": "x-organization-id",
+            "in": "header",
+            "description": "Organization public id. Required for JWT callers; implied by API key.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateVariantDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "401": {
+            "description": "Missing or invalid JWT / API key"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Create a product variant",
+        "tags": [
+          "catalog"
+        ]
+      }
+    },
+    "/public/pricing": {
+      "get": {
+        "operationId": "BillingController_pricing",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Public manufacturer pricing catalog in NGN",
+        "tags": [
+          "billing"
+        ]
+      }
+    },
+    "/public/legal/terms": {
+      "get": {
+        "operationId": "BillingController_terms",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Current commercial terms",
+        "tags": [
+          "billing"
+        ]
+      }
+    },
+    "/public/legal/privacy": {
+      "get": {
+        "operationId": "BillingController_privacy",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Privacy notice",
+        "tags": [
+          "billing"
+        ]
+      }
+    },
+    "/billing": {
+      "get": {
+        "operationId": "BillingController_snapshot",
+        "parameters": [
+          {
+            "name": "x-organization-id",
+            "in": "header",
+            "description": "Organization public id. Required for JWT callers; implied by API key.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Missing or invalid JWT / API key"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Plan, usage, remaining quotas, and terms version",
+        "tags": [
+          "billing"
+        ]
+      }
+    },
+    "/billing/subscribe": {
+      "post": {
+        "operationId": "BillingController_subscribe",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubscribeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Select a manufacturer plan",
+        "tags": [
+          "billing"
+        ]
+      }
+    },
+    "/files": {
+      "post": {
+        "operationId": "FilesController_upload",
+        "parameters": [
+          {
+            "name": "x-organization-id",
+            "in": "header",
+            "description": "Organization public id. Required for JWT callers; implied by API key.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file",
+                  "purpose"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "purpose": {
+                    "type": "string",
+                    "enum": [
+                      "PRODUCT_IMAGE",
+                      "BRAND_LOGO",
+                      "AVATAR",
+                      "REPORT_EVIDENCE",
+                      "VERIFICATION_EVIDENCE",
+                      "DOCUMENT"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "401": {
+            "description": "Missing or invalid JWT / API key"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Upload a file to local storage or Cloudflare R2",
+        "tags": [
+          "files"
+        ]
+      }
+    },
+    "/product-identities": {
+      "get": {
+        "operationId": "ProductIdentitiesController_list",
+        "parameters": [
+          {
+            "name": "x-organization-id",
+            "in": "header",
+            "description": "Organization public id. Required for JWT callers; implied by API key.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "401": {
+            "description": "Missing or invalid JWT / API key"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List recent product identities for the organization",
+        "tags": [
+          "identities"
+        ]
+      }
+    },
+    "/product-identities/generate": {
+      "post": {
+        "operationId": "ProductIdentitiesController_generate",
+        "parameters": [
+          {
+            "name": "x-organization-id",
+            "in": "header",
+            "description": "Organization public id. Required for JWT callers; implied by API key.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateIdentitiesDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "401": {
+            "description": "Missing or invalid JWT / API key"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Bulk-generate unique product identities and credentials",
+        "tags": [
+          "identities"
+        ]
+      }
+    },
+    "/product-identities/activate": {
+      "post": {
+        "operationId": "ProductIdentitiesController_activate",
+        "parameters": [
+          {
+            "name": "x-organization-id",
+            "in": "header",
+            "description": "Organization public id. Required for JWT callers; implied by API key.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IdentityActionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "401": {
+            "description": "Missing or invalid JWT / API key"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Activate a generated identity",
+        "tags": [
+          "identities"
+        ]
+      }
+    },
+    "/product-identities/revoke": {
+      "post": {
+        "operationId": "ProductIdentitiesController_revoke",
+        "parameters": [
+          {
+            "name": "x-organization-id",
+            "in": "header",
+            "description": "Organization public id. Required for JWT callers; implied by API key.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IdentityActionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "401": {
+            "description": "Missing or invalid JWT / API key"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Revoke an identity and its credentials",
+        "tags": [
+          "identities"
+        ]
+      }
+    },
+    "/product-identities/credentials": {
+      "post": {
+        "operationId": "ProductIdentitiesController_attachCredential",
+        "parameters": [
+          {
+            "name": "x-organization-id",
+            "in": "header",
+            "description": "Organization public id. Required for JWT callers; implied by API key.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttachCredentialDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "401": {
+            "description": "Missing or invalid JWT / API key"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Attach a unique manufacturer barcode, ISBN, Data Matrix, NFC, or RFID credential to one identity",
+        "tags": [
+          "identities"
+        ]
+      }
+    },
+    "/public/verify": {
+      "post": {
+        "operationId": "VerificationController_publicVerify",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "Public product verification. Does not require an account.",
+        "tags": [
+          "verification"
+        ]
+      }
+    },
+    "/public/scan": {
+      "post": {
+        "operationId": "VerificationController_publicScan",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "image": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "code": {
+                    "type": "string"
+                  },
+                  "source": {
+                    "type": "string"
+                  },
+                  "platform": {
+                    "type": "string"
+                  },
+                  "country": {
+                    "type": "string"
+                  },
+                  "city": {
+                    "type": "string"
+                  },
+                  "latitude": {
+                    "type": "number"
+                  },
+                  "longitude": {
+                    "type": "number"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "Decode a barcode/QR/ISBN photo on the server, then verify or look the product up worldwide.",
+        "tags": [
+          "verification"
+        ]
+      }
+    },
+    "/verifications": {
+      "post": {
+        "operationId": "VerificationController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "Create a verification (public or authenticated)",
+        "tags": [
+          "verification"
+        ]
+      }
+    },
+    "/analytics/verifications": {
+      "get": {
+        "operationId": "VerificationController_listForOrg",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "x-organization-id",
+            "in": "header",
+            "description": "Organization public id. Required for JWT callers; implied by API key.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Missing or invalid JWT / API key"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Paginated verification events for the organization",
+        "tags": [
+          "verification"
+        ]
+      }
+    },
+    "/verifications/{id}": {
+      "get": {
+        "operationId": "VerificationController_get",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Fetch a public verification result",
+        "tags": [
+          "verification"
+        ]
+      }
+    },
+    "/products/{id}/passport": {
+      "get": {
+        "operationId": "VerificationController_passport",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Digital product passport for a public identity",
+        "tags": [
+          "verification"
+        ]
+      }
+    },
+    "/reports": {
+      "post": {
+        "operationId": "ReportsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReportDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "Report a suspicious product",
+        "tags": [
+          "reports"
+        ]
+      },
+      "get": {
+        "operationId": "ReportsController_list",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "x-organization-id",
+            "in": "header",
+            "description": "Organization public id. Required for JWT callers; implied by API key.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Missing or invalid JWT / API key"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Product reports against this organization catalog",
+        "tags": [
+          "reports"
+        ]
+      }
+    },
+    "/recalls": {
+      "post": {
+        "operationId": "RecallsController_create",
+        "parameters": [
+          {
+            "name": "x-organization-id",
+            "in": "header",
+            "description": "Organization public id. Required for JWT callers; implied by API key.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRecallDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "401": {
+            "description": "Missing or invalid JWT / API key"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Create a recall campaign",
+        "tags": [
+          "recalls"
+        ]
+      },
+      "get": {
+        "operationId": "RecallsController_list",
+        "parameters": [
+          {
+            "name": "x-organization-id",
+            "in": "header",
+            "description": "Organization public id. Required for JWT callers; implied by API key.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "401": {
+            "description": "Missing or invalid JWT / API key"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List recalls",
+        "tags": [
+          "recalls"
+        ]
+      }
+    },
+    "/warranties": {
+      "post": {
+        "operationId": "WarrantiesController_register",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterWarrantyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Register a consumer warranty",
+        "tags": [
+          "warranties"
+        ]
+      },
+      "get": {
+        "operationId": "WarrantiesController_list",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "x-organization-id",
+            "in": "header",
+            "description": "Organization public id. Required for JWT callers; implied by API key.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Missing or invalid JWT / API key"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List warranties for the organization",
+        "tags": [
+          "warranties"
+        ]
+      }
+    },
+    "/supply-chain/events": {
+      "post": {
+        "operationId": "SupplyChainController_record",
+        "parameters": [
+          {
+            "name": "x-organization-id",
+            "in": "header",
+            "description": "Organization public id. Required for JWT callers; implied by API key.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SupplyEventDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "401": {
+            "description": "Missing or invalid JWT / API key"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Record a supply-chain custody event",
+        "tags": [
+          "supply-chain"
+        ]
+      },
+      "get": {
+        "operationId": "SupplyChainController_list",
+        "parameters": [
+          {
+            "name": "x-organization-id",
+            "in": "header",
+            "description": "Organization public id. Required for JWT callers; implied by API key.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "401": {
+            "description": "Missing or invalid JWT / API key"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List supply-chain events",
+        "tags": [
+          "supply-chain"
+        ]
+      }
+    },
+    "/admin/metrics": {
+      "get": {
+        "operationId": "AdminController_metrics",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Platform-level operational metrics",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/reports": {
+      "get": {
+        "operationId": "AdminController_reports",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Latest consumer reports across the platform",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/organizations/{id}": {
+      "patch": {
+        "operationId": "AdminController_updateOrganization",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrgStatusDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update organization status",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/brands/{id}": {
+      "patch": {
+        "operationId": "AdminController_verifyBrand",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BrandVerifyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Set brand verification status",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/analytics/dashboard": {
+      "get": {
+        "operationId": "AnalyticsController_dashboard",
+        "parameters": [
+          {
+            "name": "x-organization-id",
+            "in": "header",
+            "description": "Organization public id. Required for JWT callers; implied by API key.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "401": {
+            "description": "Missing or invalid JWT / API key"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Brand protection dashboard metrics",
+        "tags": [
+          "analytics"
+        ]
+      }
+    },
+    "/api-keys": {
+      "get": {
+        "operationId": "PlatformController_listKeys",
+        "parameters": [
+          {
+            "name": "x-organization-id",
+            "in": "header",
+            "description": "Organization public id. Required for JWT callers; implied by API key.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "401": {
+            "description": "Missing or invalid JWT / API key"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List API keys (secret is never returned again)",
+        "tags": [
+          "platform"
+        ]
+      },
+      "post": {
+        "operationId": "PlatformController_createKey",
+        "parameters": [
+          {
+            "name": "x-organization-id",
+            "in": "header",
+            "description": "Organization public id. Required for JWT callers; implied by API key.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateApiKeyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "401": {
+            "description": "Missing or invalid JWT / API key"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Create an API key. The secret is shown once.",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/api-keys/{id}": {
+      "delete": {
+        "operationId": "PlatformController_revokeKey",
+        "parameters": [
+          {
+            "name": "x-organization-id",
+            "in": "header",
+            "description": "Organization public id. Required for JWT callers; implied by API key.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "401": {
+            "description": "Missing or invalid JWT / API key"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Revoke an API key",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/webhooks": {
+      "get": {
+        "operationId": "PlatformController_listWebhooks",
+        "parameters": [
+          {
+            "name": "x-organization-id",
+            "in": "header",
+            "description": "Organization public id. Required for JWT callers; implied by API key.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "401": {
+            "description": "Missing or invalid JWT / API key"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List webhook endpoints",
+        "tags": [
+          "platform"
+        ]
+      },
+      "post": {
+        "operationId": "PlatformController_createWebhook",
+        "parameters": [
+          {
+            "name": "x-organization-id",
+            "in": "header",
+            "description": "Organization public id. Required for JWT callers; implied by API key.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWebhookDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "401": {
+            "description": "Missing or invalid JWT / API key"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Register a signed webhook endpoint. The signing secret is shown once.",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/webhooks/{id}": {
+      "patch": {
+        "operationId": "PlatformController_updateWebhook",
+        "parameters": [
+          {
+            "name": "x-organization-id",
+            "in": "header",
+            "description": "Organization public id. Required for JWT callers; implied by API key.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateWebhookDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "401": {
+            "description": "Missing or invalid JWT / API key"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Pause, disable, or reactivate a webhook",
+        "tags": [
+          "platform"
+        ]
+      },
+      "delete": {
+        "operationId": "PlatformController_deleteWebhook",
+        "parameters": [
+          {
+            "name": "x-organization-id",
+            "in": "header",
+            "description": "Organization public id. Required for JWT callers; implied by API key.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "401": {
+            "description": "Missing or invalid JWT / API key"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Delete a webhook endpoint",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/webhooks/{id}/deliveries": {
+      "get": {
+        "operationId": "PlatformController_listDeliveries",
+        "parameters": [
+          {
+            "name": "x-organization-id",
+            "in": "header",
+            "description": "Organization public id. Required for JWT callers; implied by API key.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "401": {
+            "description": "Missing or invalid JWT / API key"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "List deliveries for a webhook endpoint",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/webhooks/deliveries/{id}/retry": {
+      "post": {
+        "operationId": "PlatformController_retryDelivery",
+        "parameters": [
+          {
+            "name": "x-organization-id",
+            "in": "header",
+            "description": "Organization public id. Required for JWT callers; implied by API key.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "401": {
+            "description": "Missing or invalid JWT / API key"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "summary": "Re-queue a webhook delivery",
+        "tags": [
+          "platform"
+        ]
+      }
+    },
+    "/me/history": {
+      "get": {
+        "operationId": "ConsumersController_history",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Signed-in consumer verification history",
+        "tags": [
+          "me"
+        ]
+      }
+    },
+    "/me/wallet": {
+      "get": {
+        "operationId": "ConsumersController_wallet",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Saved product identities",
+        "tags": [
+          "me"
+        ]
+      },
+      "post": {
+        "operationId": "ConsumersController_saveWallet",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveWalletDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Save a verified identity to the product wallet",
+        "tags": [
+          "me"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "AUTHENTIC API",
+    "description": "Partner API for product identity, consumer verification, and brand protection.\n\nAuthenticate dashboard users with a JWT (`Authorization: Bearer <token>`) plus `x-organization-id`.\nAuthenticate integrations with `X-API-Key: atk_live_…` (or the same value as a Bearer token).\nAPI keys imply the organization; scopes replace org-role checks.\n\nSuccessful responses: `{ success: true, data, timestamp, requestId }`.\nErrors: `{ success: false, error: { code, message }, timestamp, requestId }`.\nList endpoints return `{ items, page, limit, total }` inside `data`.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "AUTHENTIC",
+      "url": "https://authentic.app",
+      "email": "partners@authentic.app"
+    }
+  },
+  "tags": [
+    {
+      "name": "health",
+      "description": "Liveness and dependency checks"
+    },
+    {
+      "name": "auth",
+      "description": "User registration and session"
+    },
+    {
+      "name": "organizations",
+      "description": "Workspaces and members"
+    },
+    {
+      "name": "catalog",
+      "description": "Brands, products, variants, batches"
+    },
+    {
+      "name": "identities",
+      "description": "Serialized product identities and credentials"
+    },
+    {
+      "name": "verification",
+      "description": "Scan and verify product codes"
+    },
+    {
+      "name": "analytics",
+      "description": "Brand-protection metrics"
+    },
+    {
+      "name": "platform",
+      "description": "API keys and webhooks"
+    },
+    {
+      "name": "reports",
+      "description": "Consumer product reports"
+    },
+    {
+      "name": "recalls",
+      "description": "Recall campaigns"
+    },
+    {
+      "name": "warranties",
+      "description": "Warranty register"
+    },
+    {
+      "name": "supply-chain",
+      "description": "Custody events"
+    },
+    {
+      "name": "billing",
+      "description": "Plans, usage, and legal"
+    },
+    {
+      "name": "files",
+      "description": "Uploads"
+    },
+    {
+      "name": "me",
+      "description": "Consumer history and wallet"
+    },
+    {
+      "name": "admin",
+      "description": "Platform operators"
+    }
+  ],
+  "servers": [
+    {
+      "url": "/api/v1",
+      "description": "Versioned API prefix (already applied to paths)"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http"
+      },
+      "apiKey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "Live partner key (`atk_live_…`)"
+      },
+      "organization": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-organization-id",
+        "description": "Organization public id. Required for JWT; implied by API key."
+      }
+    },
+    "schemas": {
+      "RegisterDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "organizationName": {
+            "type": "string",
+            "description": "Create a manufacturer organization at registration"
+          }
+        },
+        "required": [
+          "email",
+          "password",
+          "firstName",
+          "lastName"
+        ]
+      },
+      "LoginDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
+      },
+      "RefreshDto": {
+        "type": "object",
+        "properties": {
+          "refreshToken": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "refreshToken"
+        ]
+      },
+      "VerifyEmailDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "token"
+        ]
+      },
+      "ForgotPasswordDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "email"
+        ]
+      },
+      "ResetPasswordDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "token",
+          "password"
+        ]
+      },
+      "CreateOrganizationDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "MANUFACTURER",
+              "BRAND",
+              "DISTRIBUTOR",
+              "RETAILER",
+              "MARKETPLACE",
+              "LOGISTICS",
+              "REGULATOR",
+              "INSURER",
+              "OTHER"
+            ]
+          },
+          "country": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "legalName": {
+            "type": "string"
+          },
+          "registrationNumber": {
+            "type": "string"
+          },
+          "website": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "type"
+        ]
+      },
+      "AddMemberDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "OWNER",
+              "ADMIN",
+              "MANAGER",
+              "ANALYST",
+              "STAFF",
+              "VIEWER"
+            ]
+          }
+        },
+        "required": [
+          "email",
+          "role"
+        ]
+      },
+      "CreateBrandDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "website": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "CreateProductDto": {
+        "type": "object",
+        "properties": {
+          "brandId": {
+            "type": "string"
+          },
+          "brandName": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "gtin": {
+            "type": "string"
+          },
+          "isbn": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "countryOfOrigin": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "sku",
+          "category"
+        ]
+      },
+      "CreateVariantDto": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "gtin": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "productId",
+          "name",
+          "sku"
+        ]
+      },
+      "CreateBatchDto": {
+        "type": "object",
+        "properties": {
+          "variantId": {
+            "type": "string"
+          },
+          "productId": {
+            "type": "string"
+          },
+          "batchNumber": {
+            "type": "string"
+          },
+          "manufacturingDate": {
+            "type": "string"
+          },
+          "expiryDate": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "batchNumber",
+          "manufacturingDate",
+          "quantity"
+        ]
+      },
+      "SubscribeDto": {
+        "type": "object",
+        "properties": {
+          "planCode": {
+            "type": "string",
+            "enum": [
+              "STARTER",
+              "GROWTH",
+              "ENTERPRISE"
+            ]
+          },
+          "acceptedTermsVersion": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "planCode",
+          "acceptedTermsVersion"
+        ]
+      },
+      "ManufacturerCodeDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "QR",
+              "DATA_MATRIX",
+              "BARCODE",
+              "NFC",
+              "RFID",
+              "SERIAL",
+              "ISBN",
+              "DIGITAL_SIGNATURE",
+              "SECURITY_CODE",
+              "OTHER"
+            ]
+          },
+          "value": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "value"
+        ]
+      },
+      "GenerateIdentitiesDto": {
+        "type": "object",
+        "properties": {
+          "batchId": {
+            "type": "string"
+          },
+          "count": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 100000
+          },
+          "withSecurityCode": {
+            "type": "boolean"
+          },
+          "withBarcode": {
+            "type": "boolean"
+          },
+          "withDataMatrix": {
+            "type": "boolean"
+          },
+          "withNfc": {
+            "type": "boolean"
+          },
+          "withRfid": {
+            "type": "boolean"
+          },
+          "manufacturerCodes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ManufacturerCodeDto"
+            }
+          }
+        },
+        "required": [
+          "batchId",
+          "count"
+        ]
+      },
+      "IdentityActionDto": {
+        "type": "object",
+        "properties": {
+          "identityId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "identityId"
+        ]
+      },
+      "AttachCredentialDto": {
+        "type": "object",
+        "properties": {
+          "identityId": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "QR",
+              "DATA_MATRIX",
+              "BARCODE",
+              "NFC",
+              "RFID",
+              "SERIAL",
+              "ISBN",
+              "DIGITAL_SIGNATURE",
+              "SECURITY_CODE",
+              "OTHER"
+            ]
+          },
+          "value": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "identityId",
+          "type",
+          "value"
+        ]
+      },
+      "VerifyDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "CAMERA",
+              "MANUAL",
+              "WEB",
+              "API",
+              "POS",
+              "NFC",
+              "OTHER"
+            ]
+          },
+          "platform": {
+            "type": "string",
+            "enum": [
+              "IOS",
+              "ANDROID",
+              "WEB",
+              "API",
+              "USSD",
+              "WHATSAPP",
+              "OTHER"
+            ]
+          },
+          "country": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "latitude": {
+            "type": "number"
+          },
+          "longitude": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "code"
+        ]
+      },
+      "CreateReportDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "enum": [
+              "COUNTERFEIT",
+              "PACKAGING",
+              "WRONG_INFO",
+              "EXPIRED",
+              "RECALLED",
+              "FAKE_SELLER",
+              "DUPLICATE_CODE",
+              "OTHER"
+            ]
+          },
+          "description": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "country": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason"
+        ]
+      },
+      "CreateRecallDto": {
+        "type": "object",
+        "properties": {
+          "recallNumber": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "instructions": {
+            "type": "string"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "LOW",
+              "MEDIUM",
+              "HIGH",
+              "CRITICAL"
+            ]
+          },
+          "startDate": {
+            "type": "string"
+          },
+          "batchIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "recallNumber",
+          "reason",
+          "severity",
+          "startDate"
+        ]
+      },
+      "RegisterWarrantyDto": {
+        "type": "object",
+        "properties": {
+          "identityId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "identityId"
+        ]
+      },
+      "SupplyEventDto": {
+        "type": "object",
+        "properties": {
+          "identityId": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "MANUFACTURED",
+              "PACKAGED",
+              "SHIPPED",
+              "RECEIVED",
+              "TRANSFERRED",
+              "SOLD",
+              "RETURNED",
+              "RECALLED"
+            ]
+          },
+          "location": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "identityId",
+          "type"
+        ]
+      },
+      "OrgStatusDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "ACTIVE",
+              "SUSPENDED",
+              "REJECTED"
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "BrandVerifyDto": {
+        "type": "object",
+        "properties": {
+          "verificationStatus": {
+            "type": "string",
+            "enum": [
+              "UNVERIFIED",
+              "PENDING",
+              "VERIFIED",
+              "REJECTED"
+            ]
+          }
+        },
+        "required": [
+          "verificationStatus"
+        ]
+      },
+      "CreateApiKeyDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "scopes": {
+            "type": "array",
+            "example": [
+              "PRODUCT_READ",
+              "PRODUCT_WRITE"
+            ],
+            "items": {
+              "type": "string",
+              "enum": [
+                "VERIFY",
+                "PRODUCT_READ",
+                "PRODUCT_WRITE",
+                "ANALYTICS_READ",
+                "WEBHOOKS"
+              ]
+            }
+          },
+          "expiresAt": {
+            "type": "string",
+            "description": "ISO-8601 expiry"
+          }
+        },
+        "required": [
+          "name",
+          "scopes"
+        ]
+      },
+      "CreateWebhookDto": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "example": "https://partner.example.com/webhooks/authentic"
+          },
+          "events": {
+            "type": "array",
+            "example": [
+              "verification.created"
+            ],
+            "items": {
+              "type": "string",
+              "enum": [
+                "verification.created",
+                "risk.detected"
+              ]
+            }
+          }
+        },
+        "required": [
+          "url",
+          "events"
+        ]
+      },
+      "UpdateWebhookDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "PAUSED",
+              "DISABLED"
+            ]
+          }
+        }
+      },
+      "SaveWalletDto": {
+        "type": "object",
+        "properties": {
+          "identityId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "identityId"
+        ]
+      },
+      "ApiSuccessResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "object",
+            "description": "Endpoint-specific payload"
+          },
+          "timestamp": {
+            "type": "string",
+            "example": "2026-09-26T17:00:00.000Z"
+          },
+          "requestId": {
+            "type": "string",
+            "example": "7f3c1d2e-4a5b-6789-abcd-ef0123456789"
+          }
+        },
+        "required": [
+          "success",
+          "data",
+          "timestamp"
+        ]
+      },
+      "ApiErrorBody": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "PRODUCT_NOT_FOUND"
+          },
+          "message": {
+            "type": "string",
+            "example": "Product not found."
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ]
+      },
+      "ApiErrorResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "error": {
+            "$ref": "#/components/schemas/ApiErrorBody"
+          },
+          "timestamp": {
+            "type": "string",
+            "example": "2026-09-26T17:00:00.000Z"
+          },
+          "requestId": {
+            "type": "string",
+            "example": "7f3c1d2e-4a5b-6789-abcd-ef0123456789"
+          }
+        },
+        "required": [
+          "success",
+          "error",
+          "timestamp"
+        ]
+      },
+      "PaginatedMeta": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "number",
+            "example": 1
+          },
+          "limit": {
+            "type": "number",
+            "example": 20
+          },
+          "total": {
+            "type": "number",
+            "example": 100
+          }
+        }
+      }
+    }
+  }
+}
