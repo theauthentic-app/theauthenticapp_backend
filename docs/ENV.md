@@ -61,7 +61,7 @@ npm run start:dev
 
 | Variable | Example | How to get it |
 | --- | --- | --- |
-| `REDIS_URL` | `redis://localhost:6379` | Local: `docker compose up -d redis`. Hosted: Upstash, Redis Cloud, or Railway. Optional at boot, but rate limits, verify cache, webhook retries, and “send this email once” need it. |
+| `REDIS_URL` | empty / local docker | Optional. Local: `docker compose up -d redis`. Hosted: Upstash / Redis Cloud. If missing or `localhost` in production, Nest uses in-memory fallback (login still works; rate limits are per-instance). |
 
 ---
 
@@ -220,7 +220,9 @@ APP_WEB_URL=http://localhost:3001
 CORS_ORIGINS=http://localhost:3000,http://localhost:3001
 
 DATABASE_URL=postgresql://authentic:authentic@localhost:5432/authentic?schema=public
-REDIS_URL=redis://localhost:6379
+# Optional. Leave empty or use Upstash/Redis Cloud in production.
+# localhost Redis is ignored automatically when NODE_ENV=production (in-memory fallback).
+REDIS_URL=
 
 JWT_ACCESS_SECRET=
 JWT_REFRESH_SECRET=
