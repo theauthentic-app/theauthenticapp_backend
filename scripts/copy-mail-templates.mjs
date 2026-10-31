@@ -2,7 +2,7 @@ import { cpSync, mkdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 
 const src = join(process.cwd(), 'src', 'mail', 'templates');
-const dest = join(process.cwd(), 'dist', 'src', 'mail', 'templates');
+const dest = join(process.cwd(), 'dist', 'mail', 'templates');
 
 if (!existsSync(src)) {
   console.error(`Mail templates missing at ${src}`);
