@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { OrganizationMemberRole } from '@prisma/client';
 import {
@@ -12,7 +21,11 @@ import {
 import type { AuthUser } from '../common/decorators/current-user.decorator';
 import { PartnerAuth } from '../common/decorators/partner-auth.decorator';
 import { PaginationQueryDto } from '../common/dto/pagination.dto';
-import { AddMemberDto, CreateOrganizationDto } from './dto/organizations.dto';
+import {
+  AddMemberDto,
+  CreateOrganizationDto,
+  UpdateMemberRoleDto,
+} from './dto/organizations.dto';
 import { OrganizationsService } from './organizations.service';
 
 @ApiTags('organizations')
@@ -79,5 +92,60 @@ export class OrganizationsController {
       dto.email,
       dto.role,
     );
+  }
+
+  @HumanOnly()
+  @PartnerAuth()
+  @OrgRoles(OrganizationMemberRole.OWNER, OrganizationMemberRole.ADMIN)
+  @Patch('members/:userId')
+  @ApiOperation({ summary: 'Change a member role (user public id)' })
+  updateMember(
+    @OrganizationId() organizationId: string,
+    @CurrentUser() user: AuthUser,
+    @Param('userId') memberUserId: string,
+    @Body() dto: UpdateMemberRoleDto,
+  ) {
+    return this.organizations.updateMemberRole(
+      organizationId!,
+      user.id,
+      memberUserId,
+      dto.role,
+    );
+  }
+
+  @HumanOnly()
+  @PartnerAuth()
+  @OrgRoles(OrganizationMemberRole.OWNER, OrganizationMemberRole.ADMIN)
+  @Delete('members/:userId')
+  @ApiOperation({ summary: 'Remove a member (user public id)' })
+  removeMember(
+    @OrganizationId() organizationId: string,
+    @CurrentUser() user: AuthUser,
+    @Param('userId') memberUserId: string,
+  ) {
+    return this.organizations.removeMember(
+      organizationId!,
+      user.id,
+      memberUserId,
+    );
+  }
+
+  @HumanOnly()
+  @PartnerAuth()
+  @OrgRoles(
+    OrganizationMemberRole.OWNER,
+    OrganizationMemberRole.ADMIN,
+    OrganizationMemberRole.MANAGER,
+    OrganizationMemberRole.ANALYST,
+    OrganizationMemberRole.STAFF,
+    OrganizationMemberRole.VIEWER,
+  )
+  @Post('leave')
+  @ApiOperation({ summary: 'Leave the current organization' })
+  leave(
+    @OrganizationId() organizationId: string,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.organizations.leave(organizationId!, user.id);
   }
 }

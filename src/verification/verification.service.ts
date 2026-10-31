@@ -29,6 +29,7 @@ import {
   calculateTrustScore,
   TrustSignal,
 } from '../trust-score/trust-score.engine';
+import { BlockchainService } from '../blockchain/blockchain.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { WebhooksService } from '../webhooks/webhooks.service';
 import {
@@ -70,6 +71,7 @@ export class VerificationService {
     private readonly webhooks: WebhooksService,
     private readonly catalogLookup: CatalogLookupService,
     private readonly notifications: NotificationsService,
+    private readonly blockchain: BlockchainService,
   ) {}
 
   async lookupPassport(code: string) {
@@ -548,6 +550,10 @@ export class VerificationService {
       }
     }
 
+    const blockchain = input.identity
+      ? await this.blockchain.proofForIdentityId(input.identity.id)
+      : null;
+
     const body = {
       verificationId: verification.publicId,
       status: input.status,
@@ -567,6 +573,7 @@ export class VerificationService {
             status: input.identity.status,
           }
         : null,
+      blockchain,
       signals: input.signals,
       warnings: input.warnings,
       reasons: input.reasons,

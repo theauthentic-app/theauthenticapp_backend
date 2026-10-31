@@ -46,3 +46,9 @@ export class AddMemberDto {
   @IsEnum(OrganizationMemberRole)
   role!: OrganizationMemberRole;
 }
+
+export class UpdateMemberRoleDto {
+  @ApiProperty({ enum: OrganizationMemberRole })
+  @IsEnum(OrganizationMemberRole)
+  role!: OrganizationMemberRole;
+}

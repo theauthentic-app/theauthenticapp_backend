@@ -1,4 +1,11 @@
-import { IsEmail, IsOptional, IsString, MinLength } from 'class-validator';
+import {
+  IsEmail,
+  IsOptional,
+  IsString,
+  Matches,
+  MinLength,
+  ValidateIf,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class RegisterDto {
@@ -55,9 +62,28 @@ export class ForgotPasswordDto {
 }
 
 export class ResetPasswordDto {
-  @ApiProperty()
+  @ApiPropertyOptional({
+    description: 'Deep-link token from the reset email. Use this OR email+code.',
+  })
+  @ValidateIf((o: ResetPasswordDto) => !o.code)
   @IsString()
-  token!: string;
+  token?: string;
+
+  @ApiPropertyOptional({
+    description: 'Account email (required when resetting with a 6-digit code).',
+  })
+  @ValidateIf((o: ResetPasswordDto) => Boolean(o.code) && !o.token)
+  @IsEmail()
+  email?: string;
+
+  @ApiPropertyOptional({
+    description: '6-digit code from the reset email.',
+    example: '482910',
+  })
+  @ValidateIf((o: ResetPasswordDto) => !o.token)
+  @IsString()
+  @Matches(/^\d{6}$/, { message: 'code must be exactly 6 digits' })
+  code?: string;
 
   @ApiProperty()
   @IsString()
@@ -66,7 +92,27 @@ export class ResetPasswordDto {
 }
 
 export class VerifyEmailDto {
-  @ApiProperty()
+  @ApiPropertyOptional({
+    description:
+      'Deep-link token from the verification email URL. Use this OR email+code.',
+  })
+  @ValidateIf((o: VerifyEmailDto) => !o.code)
   @IsString()
-  token!: string;
+  token?: string;
+
+  @ApiPropertyOptional({
+    description: 'Account email (required when verifying with a 6-digit code).',
+  })
+  @ValidateIf((o: VerifyEmailDto) => Boolean(o.code) && !o.token)
+  @IsEmail()
+  email?: string;
+
+  @ApiPropertyOptional({
+    description: '6-digit code from the verification email.',
+    example: '482910',
+  })
+  @ValidateIf((o: VerifyEmailDto) => !o.token)
+  @IsString()
+  @Matches(/^\d{6}$/, { message: 'code must be exactly 6 digits' })
+  code?: string;
 }

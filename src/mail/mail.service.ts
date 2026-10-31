@@ -43,15 +43,24 @@ export class MailService {
     this.prepareTransports();
   }
 
+  /** Effective preference for health/UI: resend | smtp | log */
   provider(): string {
     const explicit = (env('EMAIL_PROVIDER') ?? '').toLowerCase();
-    if (explicit) return explicit;
-    if (env('RESEND_API_KEY')) return 'resend';
-    if (env('SMTP_HOST')) return 'smtp';
+    if (explicit === 'log') return 'log';
+    if (explicit === 'smtp' || explicit === 'nodemailer') {
+      return this.smtp ? 'smtp' : 'log';
+    }
+    if (explicit === 'resend') {
+      return this.resend ? 'resend' : this.smtp ? 'smtp' : 'log';
+    }
+    if (this.resend) return 'resend';
+    if (this.smtp) return 'smtp';
     return 'log';
   }
 
-  async send(input: SendMailInput): Promise<{ delivered: boolean; provider: string }> {
+  async send(
+    input: SendMailInput,
+  ): Promise<{ delivered: boolean; provider: string }> {
     const html = this.render(input.template, {
       ...input.context,
       subject: input.subject,
@@ -59,38 +68,47 @@ export class MailService {
     });
     const text = stripHtml(html);
     const from = env('MAIL_FROM') ?? 'AUTHENTIC <noreply@localhost>';
-    const provider = this.provider();
+    const explicit = (env('EMAIL_PROVIDER') ?? '').toLowerCase();
 
-    if (provider === 'resend') {
-      if (!this.resend) {
-        this.logger.warn('EMAIL_PROVIDER=resend but RESEND_API_KEY is missing; logging instead.');
-        this.log(from, input, text);
-        return { delivered: false, provider: 'log' };
-      }
-      await this.resend.emails.send({
-        from,
-        to: input.to,
-        subject: input.subject,
-        html,
-        text,
-      });
-      return { delivered: true, provider };
+    if (explicit === 'log') {
+      this.log(from, input, text);
+      return { delivered: false, provider: 'log' };
     }
 
-    if (provider === 'smtp' || provider === 'nodemailer') {
-      if (!this.smtp) {
-        this.logger.warn('EMAIL_PROVIDER=smtp but SMTP_HOST is missing; logging instead.');
-        this.log(from, input, text);
-        return { delivered: false, provider: 'log' };
+    const preferSmtpOnly =
+      explicit === 'smtp' || explicit === 'nodemailer';
+
+    // Default + resend: try Resend first, then SMTP.
+    if (!preferSmtpOnly && this.resend) {
+      try {
+        await this.resend.emails.send({
+          from,
+          to: input.to,
+          subject: input.subject,
+          html,
+          text,
+        });
+        return { delivered: true, provider: 'resend' };
+      } catch (error) {
+        this.logger.warn(
+          `Resend failed (${String(error)}); falling back to SMTP if configured.`,
+        );
       }
-      await this.smtp.sendMail({
-        from,
-        to: input.to,
-        subject: input.subject,
-        html,
-        text,
-      });
-      return { delivered: true, provider: 'smtp' };
+    }
+
+    if (this.smtp) {
+      try {
+        await this.smtp.sendMail({
+          from,
+          to: input.to,
+          subject: input.subject,
+          html,
+          text,
+        });
+        return { delivered: true, provider: 'smtp' };
+      } catch (error) {
+        this.logger.error(`SMTP send failed: ${String(error)}`);
+      }
     }
 
     this.log(from, input, text);
@@ -155,7 +173,9 @@ export class MailService {
     }
     const host = env('SMTP_HOST');
     if (host) {
-      const user = env('SMTP_USER');
+      const user = (env('SMTP_USER') ?? '').trim();
+      // Gmail App Passwords are often copied with spaces — strip them.
+      const pass = (env('SMTP_PASS') ?? '').replace(/\s+/g, '');
       this.smtp = nodemailer.createTransport({
         host,
         port: Number(env('SMTP_PORT') ?? '587'),
@@ -163,7 +183,7 @@ export class MailService {
         auth: user
           ? {
               user,
-              pass: env('SMTP_PASS') ?? '',
+              pass,
             }
           : undefined,
       });

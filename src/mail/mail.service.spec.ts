@@ -26,12 +26,14 @@ describe('MailService', () => {
     const mail = new MailService();
     const html = mail.render('reset-password', {
       firstName: 'Ada',
+      code: '482910',
       resetUrl: 'https://app.example/reset-password?token=abc',
       token: 'abc',
       subject: 'Reset your AUTHENTIC password',
       year: 2026,
     });
     expect(html).toContain('Reset your password');
+    expect(html).toContain('482910');
     expect(html).toContain('https://app.example/reset-password?token=abc');
     expect(html).toContain('AUTHENTIC');
   });
@@ -44,8 +46,9 @@ describe('MailService', () => {
       template: 'verify-email',
       context: {
         firstName: 'Ada',
-        verifyUrl: 'https://app.example/verify-email?token=xyz',
+        code: '482910',
         token: 'xyz',
+        verifyUrl: 'https://app.example/verify-email?token=xyz',
       },
     });
     expect(result).toEqual({ delivered: false, provider: 'log' });

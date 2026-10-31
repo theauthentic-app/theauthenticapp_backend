@@ -65,24 +65,57 @@ npm run start:dev
 
 ---
 
-## 4. Resend (email)
+## 4. Email (Gmail SMTP recommended for Nest)
 
-Leave `EMAIL_PROVIDER` empty. When `RESEND_API_KEY` is set, welcome, verify, reset, member-added, payment, KYC, trial, quota, recall, and risk emails send through Resend.
+This API uses **Nodemailer + Handlebars** templates under `src/mail/templates/` (Nest-standard HTML emails: layout + partials like `verify-email`, `welcome`, `reset-password`).
 
-| Variable | Example | How to get it |
-| --- | --- | --- |
-| `EMAIL_PROVIDER` | *(empty)* or `resend` | Empty = auto. Set `resend` to force it. `log` prints mail to the server log. `smtp` uses SMTP instead. |
-| `RESEND_API_KEY` | `re_...` | 1. Create an account at [resend.com](https://resend.com) 2. **API Keys → Create API Key** 3. Permission: Sending access 4. Paste the `re_` key here |
-| `MAIL_FROM` | `AUTHENTIC <noreply@yourdomain.com>` | Resend will reject `@localhost`. Add and verify your domain: Resend → **Domains → Add Domain** → add the DNS records (SPF, DKIM, optionally DMARC) at your DNS host → wait until status is **Verified**. Then use an address on that domain. |
+### Gmail via SMTP
 
-SMTP is only a fallback if you do not want Resend:
+| Variable | Example |
+| --- | --- |
+| `EMAIL_PROVIDER` | `smtp` |
+| `MAIL_FROM` | `AUTHENTIC <you@gmail.com>` (same mailbox as SMTP_USER) |
+| `SMTP_HOST` | `smtp.gmail.com` |
+| `SMTP_PORT` | `587` |
+| `SMTP_SECURE` | `false` |
+| `SMTP_USER` | `you@gmail.com` |
+| `SMTP_PASS` | Gmail **App Password** (not your normal login password) |
+
+How to get the App Password:
+
+1. Turn on 2-Step Verification for the Google account  
+2. Open [App passwords](https://myaccount.google.com/apppasswords)  
+3. Create one for “Mail” / “Other (AUTHENTIC)”  
+4. Paste the 16-character password into `SMTP_PASS` (no spaces)  
+5. Restart the API
+
+`APP_WEB_URL` must be your frontend origin so verify/reset links in the email work (e.g. `http://localhost:3000` or your Vercel URL).
+
+### Resend (preferred) + SMTP fallback
+
+Leave `EMAIL_PROVIDER` empty. Order: **Resend → SMTP (Gmail) → log**.
 
 | Variable | Notes |
 | --- | --- |
-| `SMTP_HOST` | e.g. `smtp.gmail.com` or your ESP host |
-| `SMTP_PORT` | Usually `587` |
-| `SMTP_SECURE` | `true` only for port `465` |
-| `SMTP_USER` / `SMTP_PASS` | Provider username and app password |
+| `RESEND_API_KEY` | From [resend.com](https://resend.com) — tried first |
+| `SMTP_*` | Gmail App Password fallback if Resend missing or fails |
+| `MAIL_FROM` | Verified Resend domain, or your Gmail for SMTP |
+
+---
+
+## Blockchain identity anchoring
+
+Verification stays off-chain. Crypto adds an immutable **commitment** (hash) per unit, batched as a Merkle root.
+
+| Variable | Notes |
+| --- | --- |
+| `BLOCKCHAIN_ENABLED` | `true` to queue anchors on mint |
+| `BLOCKCHAIN_CHAIN_KEY` | e.g. `polygon-amoy`, `polygon`, `base`, `ethereum`, `bsc` |
+| `BLOCKCHAIN_RPC_URL` | JSON-RPC URL for live submit |
+| `BLOCKCHAIN_PRIVATE_KEY` | Server wallet that pays gas (never commit / never send to FE) |
+| `BLOCKCHAIN_REGISTRY_ADDRESS` | Deployed `AuthenticRegistry` (see `src/blockchain/registry.abi.ts`) |
+
+Without RPC/key/registry, commitments are still computed and stay `PENDING`/`QUEUED` until you go live. Native currencies (`ETH`, `POL`, `BNB`) are chain gas metadata only.
 
 ---
 

@@ -2,26 +2,38 @@ import { DocumentBuilder } from '@nestjs/swagger';
 
 export function buildSwaggerConfig() {
   return new DocumentBuilder()
-    .setTitle('AUTHENTIC API')
+    .setTitle('AUTHENTIC Partner API')
     .setDescription(
       [
-        'Partner API for product identity, consumer verification, and brand protection.',
+        '# Overview',
+        'Commercial partner API for **product identity**, **consumer verification**, **brand protection**, and **platform content**.',
         '',
-        'Authenticate dashboard users with a JWT (`Authorization: Bearer <token>`) plus `x-organization-id`.',
-        'Authenticate integrations with `X-API-Key: atk_live_…` (or the same value as a Bearer token).',
-        'API keys imply the organization; scopes replace org-role checks.',
+        'Use this OpenAPI document to integrate manufacturer dashboards, mobile scanners, and B2B partners — or to package AUTHENTIC as a sellable API product.',
         '',
-        'Successful responses: `{ success: true, data, timestamp, requestId }`.',
-        'Errors: `{ success: false, error: { code, message }, timestamp, requestId }`.',
-        'List endpoints return `{ items, page, limit, total }` inside `data`.',
+        '## Authentication',
+        '- **Human (dashboard):** `Authorization: Bearer <accessToken>` + `x-organization-id: org_…`',
+        '- **Machine (partner):** `X-API-Key: atk_live_…` (organization implied; scopes replace org roles)',
+        '- **Public:** scan/verify, pricing, published blog — no auth',
         '',
-        'MVP loop: register manufacturer → create catalog → POST /product-identities/generate → GET export/label → POST /public/verify or open /scan.',
-        'Pay: POST /billing/subscribe. If PAYSTACK_SECRET_KEY is set, complete checkout; otherwise an admin activates the invoice.',
+        '## Envelope',
+        '- Success: `{ success: true, data, timestamp, requestId }`',
+        '- Error: `{ success: false, error: { code, message }, timestamp, requestId }`',
+        '- Lists: `data: { items, page, limit, total }`',
+        '',
+        '## Product truth',
+        'Verification statuses are evidence (`AUTHENTICATED`, `SUSPICIOUS`, `COMPROMISED`, …). Clients must **not** invent “original/fake” labels.',
+        '',
+        '## Manufacturer cockpit modules',
+        '`GET /analytics/dashboard` returns `modules[]` for Products, Batches, Verifications, Risk Signals, Counterfeit Intel, Supply Chain, Recalls, Warranties, Analytics, and API Access — each with KPIs, status, and API hints.',
+        '',
+        '## Commercial packaging',
+        'Plan features gate API keys/webhooks (`billing.assertFeature`). Scope keys: `VERIFY`, `PRODUCT_READ`, `PRODUCT_WRITE`, `ANALYTICS_READ`, `WEBHOOKS`.',
       ].join('\n'),
     )
-    .setVersion('1.0.0')
-    .setContact('AUTHENTIC', 'https://authentic.app', 'partners@authentic.app')
-    .addServer('/api/v1', 'Versioned API prefix (already applied to paths)')
+    .setVersion('1.1.0')
+    .setContact('AUTHENTIC Partners', 'https://authentic.app', 'partners@authentic.app')
+    .setLicense('Proprietary', 'https://authentic.app/legal/terms')
+    .addServer('/api/v1', 'Versioned API (paths already include this prefix in Nest)')
     .addBearerAuth(
       { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
       'bearer',
@@ -45,20 +57,24 @@ export function buildSwaggerConfig() {
       'organization',
     )
     .addTag('health', 'Liveness and dependency checks')
-    .addTag('auth', 'User registration and session')
+    .addTag('auth', 'Registration, OTP verify, session, password reset')
     .addTag('organizations', 'Workspaces and members')
     .addTag('catalog', 'Brands, products, variants, batches')
     .addTag('identities', 'Serialized product identities and credentials')
-    .addTag('verification', 'Scan and verify product codes')
-    .addTag('analytics', 'Brand-protection metrics')
-    .addTag('platform', 'API keys and webhooks')
+    .addTag('verification', 'Public and partner scan / verify')
+    .addTag('analytics', 'Manufacturer dashboard + verification history')
+    .addTag('risk', 'Risk signals (clone, travel, frequency)')
+    .addTag('intel', 'Counterfeit intel evidence cockpit')
+    .addTag('platform', 'API keys and webhooks (Growth+)')
     .addTag('reports', 'Consumer product reports')
     .addTag('recalls', 'Recall campaigns')
     .addTag('warranties', 'Warranty register')
     .addTag('supply-chain', 'Custody events')
-    .addTag('billing', 'Plans, usage, and legal')
-    .addTag('files', 'Uploads')
-    .addTag('me', 'Consumer history and wallet')
-    .addTag('admin', 'Platform operators')
+    .addTag('billing', 'Plans, usage, Paystack / invoice')
+    .addTag('files', 'Uploads (R2 / local)')
+    .addTag('me', 'Consumer dashboard, history, wallet, reports')
+    .addTag('blog', 'Public SEO blog + admin CMS')
+    .addTag('admin', 'Platform operators: KYC, bans, metrics, blog')
+    .addTag('blockchain', 'Identity commitment anchors')
     .build();
 }

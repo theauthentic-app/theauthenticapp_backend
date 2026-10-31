@@ -119,7 +119,7 @@ Response envelope:
 }
 ```
 
-Partner contract details: **[API.md](API.md)** · Architecture: **[ARCHITECTURE.md](ARCHITECTURE.md)**
+Partner contract: **[API.md](API.md)** · Frontend integration: **[docs/FRONTEND.md](docs/FRONTEND.md)** · Blockchain + mail for FE: **[docs/FRONTEND_BLOCKCHAIN.md](docs/FRONTEND_BLOCKCHAIN.md)** · Architecture: **[ARCHITECTURE.md](ARCHITECTURE.md)**
 
 ---
 

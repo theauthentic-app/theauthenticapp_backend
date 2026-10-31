@@ -161,6 +161,147 @@ export class OrganizationsService {
     return { userId: user.publicId, role: member.role };
   }
 
+  async updateMemberRole(
+    organizationId: string,
+    actorUserId: string,
+    memberPublicUserId: string,
+    role: OrganizationMemberRole,
+  ) {
+    const actor = await this.requireMembership(organizationId, actorUserId);
+    if (
+      actor.role !== OrganizationMemberRole.OWNER &&
+      actor.role !== OrganizationMemberRole.ADMIN
+    ) {
+      throw new AppError('FORBIDDEN', 'Insufficient organization role.', 403);
+    }
+    if (role === OrganizationMemberRole.OWNER && actor.role !== OrganizationMemberRole.OWNER) {
+      throw new AppError(
+        'FORBIDDEN',
+        'Only an owner can assign the OWNER role.',
+        403,
+      );
+    }
+    const targetUser = await this.prisma.user.findUnique({
+      where: { publicId: memberPublicUserId },
+    });
+    if (!targetUser) {
+      throw new AppError('USER_NOT_FOUND', 'User not found.', 404);
+    }
+    const target = await this.prisma.organizationMember.findUnique({
+      where: {
+        organizationId_userId: {
+          organizationId,
+          userId: targetUser.id,
+        },
+      },
+    });
+    if (!target) {
+      throw new AppError('USER_NOT_FOUND', 'Member not found.', 404);
+    }
+    if (target.role === OrganizationMemberRole.OWNER && role !== OrganizationMemberRole.OWNER) {
+      const owners = await this.prisma.organizationMember.count({
+        where: { organizationId, role: OrganizationMemberRole.OWNER },
+      });
+      if (owners <= 1) {
+        throw new AppError(
+          'LAST_OWNER',
+          'Cannot demote the last owner.',
+          400,
+        );
+      }
+    }
+    const member = await this.prisma.organizationMember.update({
+      where: { id: target.id },
+      data: { role },
+    });
+    await this.audit.record({
+      action: 'USER_ROLE_CHANGED',
+      actorUserId,
+      organizationId,
+      entity: 'OrganizationMember',
+      entityId: member.id,
+      metadata: { role, userId: targetUser.publicId },
+    });
+    return { userId: targetUser.publicId, role: member.role };
+  }
+
+  async removeMember(
+    organizationId: string,
+    actorUserId: string,
+    memberPublicUserId: string,
+  ) {
+    const actor = await this.requireMembership(organizationId, actorUserId);
+    if (
+      actor.role !== OrganizationMemberRole.OWNER &&
+      actor.role !== OrganizationMemberRole.ADMIN
+    ) {
+      throw new AppError('FORBIDDEN', 'Insufficient organization role.', 403);
+    }
+    const targetUser = await this.prisma.user.findUnique({
+      where: { publicId: memberPublicUserId },
+    });
+    if (!targetUser) {
+      throw new AppError('USER_NOT_FOUND', 'User not found.', 404);
+    }
+    const target = await this.prisma.organizationMember.findUnique({
+      where: {
+        organizationId_userId: {
+          organizationId,
+          userId: targetUser.id,
+        },
+      },
+    });
+    if (!target) {
+      throw new AppError('USER_NOT_FOUND', 'Member not found.', 404);
+    }
+    if (target.role === OrganizationMemberRole.OWNER) {
+      const owners = await this.prisma.organizationMember.count({
+        where: { organizationId, role: OrganizationMemberRole.OWNER },
+      });
+      if (owners <= 1) {
+        throw new AppError(
+          'LAST_OWNER',
+          'Cannot remove the last owner.',
+          400,
+        );
+      }
+    }
+    if (
+      actor.role === OrganizationMemberRole.ADMIN &&
+      target.role === OrganizationMemberRole.OWNER
+    ) {
+      throw new AppError('FORBIDDEN', 'Admins cannot remove owners.', 403);
+    }
+    await this.prisma.organizationMember.delete({ where: { id: target.id } });
+    await this.audit.record({
+      action: 'USER_ROLE_CHANGED',
+      actorUserId,
+      organizationId,
+      entity: 'OrganizationMember',
+      entityId: target.id,
+      metadata: { removed: true, userId: targetUser.publicId },
+    });
+    return { removed: true, userId: targetUser.publicId };
+  }
+
+  async leave(organizationId: string, userId: string) {
+    const membership = await this.requireMembership(organizationId, userId);
+    if (membership.role === OrganizationMemberRole.OWNER) {
+      const owners = await this.prisma.organizationMember.count({
+        where: { organizationId, role: OrganizationMemberRole.OWNER },
+      });
+      if (owners <= 1) {
+        throw new AppError(
+          'LAST_OWNER',
+          'Transfer ownership before leaving.',
+          400,
+        );
+      }
+    }
+    await this.prisma.organizationMember.delete({ where: { id: membership.id } });
+    return { left: true };
+  }
+
   async listMembers(organizationId: string, query?: PaginationInput) {
     const { page, limit, skip, take } = paginationOf(query);
     const where = { organizationId };

@@ -23,6 +23,17 @@ export function randomToken(bytes = 32): string {
   return randomBytes(bytes).toString('base64url');
 }
 
+/** Cryptographically random numeric OTP (default 6 digits). */
+export function randomNumericCode(digits = 6): string {
+  if (digits < 4 || digits > 12) {
+    throw new Error('digits must be between 4 and 12');
+  }
+  const max = 10 ** digits;
+  const bytes = randomBytes(4);
+  const n = bytes.readUInt32BE(0) % max;
+  return String(n).padStart(digits, '0');
+}
+
 export function normalizeCode(raw: string): string {
   return raw
     .trim()
