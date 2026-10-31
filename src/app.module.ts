@@ -19,9 +19,12 @@ import { PartnerThrottlerGuard } from './common/throttler/partner-throttler.guar
 import { RedisThrottlerStorage } from './common/throttler/redis-throttler.storage';
 import { ConsumersModule } from './consumers/consumers.module';
 import { BillingModule } from './billing/billing.module';
+import { BlockchainModule } from './blockchain/blockchain.module';
+import { BlogModule } from './blog/blog.module';
 import { DatabaseModule } from './database/database.module';
 import { FilesModule } from './files/files.module';
 import { HealthModule } from './health/health.module';
+import { IntelModule } from './intel/intel.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { OrganizationsModule } from './organizations/organizations.module';
 import { ProductIdentitiesModule } from './product-identities/product-identities.module';
@@ -66,8 +69,11 @@ import { WarrantiesModule } from './warranties/warranties.module';
     NotificationsModule,
     AuditModule,
     RiskModule,
+    IntelModule,
+    BlogModule,
     ConsumersModule,
     BillingModule,
+    BlockchainModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

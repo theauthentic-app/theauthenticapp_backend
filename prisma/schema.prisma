@@ -281,6 +281,23 @@ enum AuditAction {
   WEBHOOK_CREATED
   SUBSCRIPTION_UPDATED
   BRAND_UPDATED
+  IDENTITY_ANCHORED
+  REPORT_REVIEWED
+  USER_STATUS_CHANGED
+  BLOG_PUBLISHED
+}
+
+enum AnchorStatus {
+  PENDING
+  QUEUED
+  ANCHORED
+  FAILED
+}
+
+enum BlogPostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
 }
 
 model User {
@@ -313,6 +330,7 @@ model User {
   passwordResets   PasswordReset[]
   emailTokens      EmailVerificationToken[]
   walletItems      WalletItem[]
+  blogPosts        BlogPost[]
 }
 
 model RefreshToken {
@@ -335,22 +353,30 @@ model PasswordReset {
   id        String    @id @default(cuid())
   userId    String
   tokenHash String    @unique
+  /// SHA-256 of the 6-digit reset OTP (lookup with userId).
+  codeHash  String?
   expiresAt DateTime
   usedAt    DateTime?
   createdAt DateTime  @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, codeHash])
 }
 
 model EmailVerificationToken {
   id        String    @id @default(cuid())
   userId    String
   tokenHash String    @unique
+  /// SHA-256 of the 6-digit email OTP (lookup with userId).
+  codeHash  String?
   expiresAt DateTime
   usedAt    DateTime?
   createdAt DateTime  @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, codeHash])
 }
 
 model Organization {
@@ -384,6 +410,7 @@ model Organization {
   files            StoredFile[]
   subscription     Subscription?
   payments         Payment[]
+  identityAnchors  IdentityAnchor[]
   kycNotes         String?
 }
 
@@ -575,12 +602,44 @@ model ProductIdentity {
   supplyEvents   SupplyChainEvent[]
   inventoryItems InventoryItem[]
   walletItems    WalletItem[]
+  blockchainAnchor IdentityAnchor?
 
   @@unique([productVariantId, serialNumber])
   @@index([serialNumber])
   @@index([batchId])
   @@index([status])
   @@index([organizationId])
+}
+
+/// On-chain commitment for a product identity (hash only — no PII on chain).
+model IdentityAnchor {
+  id                String       @id @default(cuid())
+  publicId          String       @unique
+  productIdentityId String       @unique
+  organizationId    String
+  commitment        String
+  status            AnchorStatus @default(PENDING)
+  chainKey          String?
+  chainId           Int?
+  nativeCurrency    String?
+  txHash            String?
+  blockNumber       BigInt?
+  merkleRoot        String?
+  merkleProof       Json?
+  leafIndex         Int?
+  explorerUrl       String?
+  errorMessage      String?
+  anchoredAt        DateTime?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  productIdentity ProductIdentity @relation(fields: [productIdentityId], references: [id], onDelete: Cascade)
+  organization    Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
+  @@index([organizationId])
+  @@index([commitment])
+  @@index([txHash])
 }
 
 model Credential {
@@ -905,6 +964,29 @@ model IdempotencyKey {
   createdAt      DateTime @default(now())
 
   @@unique([key, method, path])
+  @@index([createdAt])
+}
+
+model BlogPost {
+  id             String         @id @default(cuid())
+  publicId       String         @unique
+  slug           String         @unique
+  title          String
+  excerpt        String?
+  bodyMarkdown   String
+  coverImageUrl  String?
+  status         BlogPostStatus @default(DRAFT)
+  seoTitle       String?
+  seoDescription String?
+  tags           String[]       @default([])
+  authorUserId   String?
+  publishedAt    DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  author User? @relation(fields: [authorUserId], references: [id])
+
+  @@index([status, publishedAt])
   @@index([createdAt])
 }
 

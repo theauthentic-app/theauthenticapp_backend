@@ -56,14 +56,20 @@ export class AuthController {
   @Public()
   @Post('verify-email')
   @HttpCode(200)
+  @ApiOperation({
+    summary:
+      'Confirm email with a 6-digit code (email+code) or deep-link token. Returns session tokens on success.',
+  })
   verifyEmail(@Body() dto: VerifyEmailDto) {
-    return this.auth.verifyEmail(dto.token);
+    return this.auth.verifyEmail(dto);
   }
 
   @Public()
   @Post('resend-verification')
   @HttpCode(200)
-  @ApiOperation({ summary: 'Resend the email verification link' })
+  @ApiOperation({
+    summary: 'Resend the verification email (new 6-digit code + link token)',
+  })
   resendVerification(@Body() dto: ForgotPasswordDto) {
     return this.auth.resendVerification(dto.email);
   }
@@ -78,8 +84,12 @@ export class AuthController {
   @Public()
   @Post('reset-password')
   @HttpCode(200)
+  @ApiOperation({
+    summary:
+      'Set a new password with a 6-digit code (email+code) or deep-link token',
+  })
   resetPassword(@Body() dto: ResetPasswordDto) {
-    return this.auth.resetPassword(dto.token, dto.password);
+    return this.auth.resetPassword(dto);
   }
 
   @ApiBearerAuth('bearer')

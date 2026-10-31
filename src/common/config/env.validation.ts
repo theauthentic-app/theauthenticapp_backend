@@ -21,6 +21,14 @@ const envSchema = z.object({
   ORG_KYC_REQUIRED: z.string().optional(),
   EMAIL_PROVIDER: z.string().optional(),
   STORAGE_PROVIDER: z.string().optional(),
+  EMAIL_VERIFICATION_REQUIRED: z.string().optional(),
+  /** true|false — when unset: debug tokens only if NODE_ENV!==production or EMAIL_PROVIDER=log */
+  AUTH_DEBUG_TOKENS: z.string().optional(),
+  BLOCKCHAIN_ENABLED: z.string().optional(),
+  BLOCKCHAIN_CHAIN_KEY: z.string().optional(),
+  BLOCKCHAIN_RPC_URL: z.string().optional(),
+  BLOCKCHAIN_PRIVATE_KEY: z.string().optional(),
+  BLOCKCHAIN_REGISTRY_ADDRESS: z.string().optional(),
 });
 
 export function validateEnv(config: Record<string, unknown>) {

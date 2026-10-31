@@ -1,5 +1,6 @@
 import {
   normalizeCode,
+  randomNumericCode,
   signIdentity,
   verifyIdentitySignature,
 } from './crypto.util';
@@ -22,5 +23,12 @@ describe('identity crypto', () => {
     expect(
       verifyIdentitySignature({ ...payload, signature: '00'.repeat(32) }),
     ).toBe(false);
+  });
+
+  it('generates zero-padded numeric OTP codes', () => {
+    for (let i = 0; i < 20; i += 1) {
+      const code = randomNumericCode(6);
+      expect(code).toMatch(/^\d{6}$/);
+    }
   });
 });

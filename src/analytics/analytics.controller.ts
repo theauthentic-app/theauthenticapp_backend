@@ -2,7 +2,10 @@ import { Controller, Get, Query } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { OrganizationMemberRole } from '@prisma/client';
 import { ApiScopes, OrgRoles } from '../common/decorators/auth.decorators';
-import { OrganizationId } from '../common/decorators/current-user.decorator';
+import {
+  MembershipRole,
+  OrganizationId,
+} from '../common/decorators/current-user.decorator';
 import { PartnerAuth } from '../common/decorators/partner-auth.decorator';
 import { AnalyticsService } from './analytics.service';
 import { DashboardQueryDto } from './dto/analytics.dto';
@@ -25,12 +28,13 @@ export class AnalyticsController {
   @Get('dashboard')
   @ApiOperation({
     summary:
-      'Brand protection dashboard: filters, 7/30-day trends, quotas, and recent scans',
+      'Role-aware brand dashboard: protection KPIs, insights, ops, finance, team',
   })
   dashboard(
     @OrganizationId() organizationId: string,
+    @MembershipRole() role: OrganizationMemberRole | undefined,
     @Query() query: DashboardQueryDto,
   ) {
-    return this.analytics.dashboard(organizationId, query);
+    return this.analytics.dashboard(organizationId!, query, role);
   }
 }

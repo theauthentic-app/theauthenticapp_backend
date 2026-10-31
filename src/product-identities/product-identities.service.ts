@@ -16,6 +16,7 @@ import {
 import { PrismaService } from '../database/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { BillingService } from '../billing/billing.service';
+import { BlockchainService } from '../blockchain/blockchain.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { RedisService } from '../redis/redis.service';
 import {
@@ -47,6 +48,7 @@ export class ProductIdentitiesService {
     private readonly redis: RedisService,
     private readonly billing: BillingService,
     private readonly notifications: NotificationsService,
+    private readonly blockchain: BlockchainService,
   ) {}
 
   async list(organizationId: string, query?: PaginationInput) {
@@ -126,7 +128,13 @@ export class ProductIdentitiesService {
     if (!batch) throw new AppError('BATCH_NOT_FOUND', 'Batch not found.', 404);
 
     const secret = this.config.getOrThrow<string>('IDENTITY_SIGNING_SECRET');
-    const created: Array<{ publicId: string; serialNumber: string }> = [];
+    const created: Array<{
+      id: string;
+      publicId: string;
+      serialNumber: string;
+      signature: string;
+      createdAt: Date;
+    }> = [];
     const chunkSize = 250;
 
     for (let offset = 0; offset < input.count; offset += chunkSize) {
@@ -206,7 +214,13 @@ export class ProductIdentitiesService {
             this.throwIfCredentialConflict(error);
             throw error;
           }
-          created.push({ publicId: row.pid, serialNumber: row.serial });
+          created.push({
+            id: identity.id,
+            publicId: row.pid,
+            serialNumber: row.serial,
+            signature,
+            createdAt: identity.createdAt,
+          });
         }
       });
     }
@@ -218,6 +232,20 @@ export class ProductIdentitiesService {
       entity: 'ProductIdentity',
       metadata: { count: created.length, batchId: batch.publicId },
     });
+
+    try {
+      await this.blockchain.queueForIdentities(
+        created.map((row) => ({
+          id: row.id,
+          publicId: row.publicId,
+          signature: row.signature,
+          organizationId,
+          createdAt: row.createdAt,
+        })),
+      );
+    } catch {
+      // Anchoring is best-effort; mint must still succeed.
+    }
 
     const snap = await this.billing.snapshot(organizationId);
     if (
@@ -249,11 +277,14 @@ export class ProductIdentitiesService {
     return {
       count: created.length,
       identities: created.slice(0, 25).map((row) => ({
-        ...row,
+        publicId: row.publicId,
+        serialNumber: row.serialNumber,
         verifyUrl: `${web.replace(/\/$/, '')}/scan?code=${encodeURIComponent(row.publicId)}`,
         labelUrl: `${api.replace(/\/$/, '')}/api/v1/product-identities/${row.publicId}/label`,
+        blockchainUrl: `${api.replace(/\/$/, '')}/api/v1/public/identities/${row.publicId}/blockchain`,
       })),
       truncated: created.length > 25,
+      blockchain: this.blockchain.status(),
       export: {
         csv: `${api.replace(/\/$/, '')}/api/v1/product-identities/export?format=csv&batchId=${batch.publicId}`,
         pdf: `${api.replace(/\/$/, '')}/api/v1/product-identities/export?format=pdf&batchId=${batch.publicId}`,

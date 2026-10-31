@@ -1,4 +1,5 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
+import type { OrganizationMemberRole } from '@prisma/client';
 import type { RequestPrincipal } from '../types/request-principal';
 
 export type AuthUser = {
@@ -11,6 +12,7 @@ type AuthedRequest = {
   user?: AuthUser;
   principal?: RequestPrincipal;
   organizationId?: string;
+  membershipRole?: OrganizationMemberRole;
   headers: Record<string, string | undefined>;
 };
 
@@ -39,5 +41,13 @@ export const OrganizationId = createParamDecorator(
   (_data: unknown, ctx: ExecutionContext): string | undefined => {
     const request = ctx.switchToHttp().getRequest<AuthedRequest>();
     return request.organizationId ?? request.headers['x-organization-id'];
+  },
+);
+
+/** Set by OrgRolesGuard after membership check (human JWT). */
+export const MembershipRole = createParamDecorator(
+  (_data: unknown, ctx: ExecutionContext): OrganizationMemberRole | undefined => {
+    const request = ctx.switchToHttp().getRequest<AuthedRequest>();
+    return request.membershipRole;
   },
 );
