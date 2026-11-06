@@ -370,7 +370,7 @@ Prefer the same OTP UX as email verify. Deep-link token still works.
 
 Password **min 10** chars. Code expires in **30 minutes**.
 
-Forgot response may include `debugResetCode` / `debugResetToken` when `AUTH_DEBUG_TOKENS=true`.
+Forgot response may include `debugResetCode` / `debugResetToken` in development (unless `AUTH_DEBUG_TOKENS=false`). Production never returns them, whatever the env says.
 
 ### Success `data`
 

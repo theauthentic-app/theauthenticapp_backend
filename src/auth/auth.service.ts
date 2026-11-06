@@ -630,16 +630,12 @@ export class AuthService {
   }
 
   private mailDebugTokenEnabled(): boolean {
+    // Debug tokens let anyone reset any account's password; never in production.
+    if (this.config.get<string>('NODE_ENV') === 'production') return false;
     const flag = (this.config.get<string>('AUTH_DEBUG_TOKENS') ?? '')
       .trim()
       .toLowerCase();
-    if (flag === 'true' || flag === '1') return true;
-    if (flag === 'false' || flag === '0') return false;
-    const provider = (
-      this.config.get<string>('EMAIL_PROVIDER') ?? ''
-    ).toLowerCase();
-    if (provider === 'log') return true;
-    return this.config.get<string>('NODE_ENV') !== 'production';
+    return flag !== 'false' && flag !== '0';
   }
 
   /** Expose OTP/token in API only when AUTH_DEBUG_TOKENS / non-prod debug allows. */

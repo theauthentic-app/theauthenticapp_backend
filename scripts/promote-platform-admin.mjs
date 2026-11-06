@@ -1,8 +1,14 @@
 import { PrismaClient } from "@prisma/client";
 import argon2 from "argon2";
 
-const email = (process.env.PLATFORM_ADMIN_EMAIL || "theauthentic.ng@gmail.com").toLowerCase();
-const password = process.env.PLATFORM_ADMIN_PASSWORD || "REDACTED";
+const email = (process.env.PLATFORM_ADMIN_EMAIL || "").trim().toLowerCase();
+const password = process.env.PLATFORM_ADMIN_PASSWORD || "";
+if (!email || password.length < 12) {
+  console.error(
+    "Set PLATFORM_ADMIN_EMAIL and PLATFORM_ADMIN_PASSWORD (12+ chars) in the environment.",
+  );
+  process.exit(1);
+}
 
 const prisma = new PrismaClient();
 

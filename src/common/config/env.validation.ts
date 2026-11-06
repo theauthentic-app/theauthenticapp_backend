@@ -31,6 +31,26 @@ const envSchema = z.object({
   BLOCKCHAIN_REGISTRY_ADDRESS: z.string().optional(),
 });
 
+const PLACEHOLDER_SECRET = /replace-with|changeme|dev-identity-hmac|^secret$/i;
+
+function productionIssues(env: z.infer<typeof envSchema>): string[] {
+  if (env.NODE_ENV !== 'production') return [];
+  const issues: string[] = [];
+  for (const key of [
+    'JWT_ACCESS_SECRET',
+    'JWT_REFRESH_SECRET',
+    'IDENTITY_SIGNING_SECRET',
+  ] as const) {
+    const value = env[key];
+    if (value.length < 32) issues.push(`${key}: must be at least 32 characters in production`);
+    if (PLACEHOLDER_SECRET.test(value)) issues.push(`${key}: still a placeholder value`);
+  }
+  if (env.JWT_ACCESS_SECRET === env.JWT_REFRESH_SECRET) {
+    issues.push('JWT_REFRESH_SECRET: must differ from JWT_ACCESS_SECRET');
+  }
+  return issues;
+}
+
 export function validateEnv(config: Record<string, unknown>) {
   const parsed = envSchema.safeParse(config);
   if (!parsed.success) {
@@ -38,6 +58,10 @@ export function validateEnv(config: Record<string, unknown>) {
       .map((issue) => `${issue.path.join('.')}: ${issue.message}`)
       .join('; ');
     throw new Error(`Invalid environment: ${details}`);
+  }
+  const issues = productionIssues(parsed.data);
+  if (issues.length) {
+    throw new Error(`Invalid environment: ${issues.join('; ')}`);
   }
   return { ...config, ...parsed.data };
 }

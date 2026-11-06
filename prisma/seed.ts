@@ -10,7 +10,26 @@ import {
 
 const prisma = new PrismaClient();
 
+function assertSafeToSeed() {
+  if (process.env.ALLOW_DEMO_SEED === 'true') return;
+  const host = (() => {
+    try {
+      return new URL(process.env.DATABASE_URL ?? '').hostname;
+    } catch {
+      return '';
+    }
+  })();
+  const isLocalDb = ['localhost', '127.0.0.1', 'postgres', 'db'].includes(host);
+  if (process.env.NODE_ENV === 'production' || !isLocalDb) {
+    throw new Error(
+      `Refusing to seed demo accounts (known password) into ${host || 'unknown host'}. ` +
+        'Point DATABASE_URL at a local database, or set ALLOW_DEMO_SEED=true if you really mean it.',
+    );
+  }
+}
+
 async function main() {
+  assertSafeToSeed();
   const passwordHash = await argon2.hash('authentic-demo');
   const signingSecret = process.env.IDENTITY_SIGNING_SECRET ?? 'dev-identity-hmac-secret-authentic';
 
