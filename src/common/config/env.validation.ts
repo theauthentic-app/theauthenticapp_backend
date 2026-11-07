@@ -1,5 +1,13 @@
 import { z } from 'zod';
 
+/** Render and dotenv often set unused keys to "", which should mean "not configured". */
+function optionalMatching(pattern: RegExp, message: string) {
+  return z.preprocess(
+    (value) => (typeof value === 'string' && value.trim() === '' ? undefined : value),
+    z.string().regex(pattern, message).optional(),
+  );
+}
+
 const envSchema = z.object({
   NODE_ENV: z
     .enum(['development', 'test', 'production'])
@@ -16,8 +24,16 @@ const envSchema = z.object({
   THROTTLE_PUBLIC: z.coerce.number().optional(),
   THROTTLE_JWT: z.coerce.number().optional(),
   THROTTLE_API_KEY: z.coerce.number().optional(),
-  PAYSTACK_SECRET_KEY: z.string().optional(),
-  PAYSTACK_PUBLIC_KEY: z.string().optional(),
+  PAYSTACK_SECRET_KEY: optionalMatching(
+    /^sk_(test|live)_\w+$/,
+    'must look like sk_test_… or sk_live_…',
+  ),
+  PAYSTACK_PUBLIC_KEY: optionalMatching(
+    /^pk_(test|live)_\w+$/,
+    'must look like pk_test_… or pk_live_…',
+  ),
+  /** Extra comma-separated origins allowed as Paystack return URLs. */
+  BILLING_CALLBACK_ORIGINS: z.string().optional(),
   ORG_KYC_REQUIRED: z.string().optional(),
   EMAIL_PROVIDER: z.string().optional(),
   STORAGE_PROVIDER: z.string().optional(),
@@ -32,6 +48,19 @@ const envSchema = z.object({
 });
 
 const PLACEHOLDER_SECRET = /replace-with|changeme|dev-identity-hmac|^secret$/i;
+
+function paystackIssues(env: z.infer<typeof envSchema>): string[] {
+  const secret = env.PAYSTACK_SECRET_KEY;
+  const publicKey = env.PAYSTACK_PUBLIC_KEY;
+  if (!secret || !publicKey) return [];
+  const secretMode = secret.startsWith('sk_live_') ? 'live' : 'test';
+  const publicMode = publicKey.startsWith('pk_live_') ? 'live' : 'test';
+  return secretMode === publicMode
+    ? []
+    : [
+        `PAYSTACK_PUBLIC_KEY: is a ${publicMode} key but PAYSTACK_SECRET_KEY is ${secretMode}`,
+      ];
+}
 
 function productionIssues(env: z.infer<typeof envSchema>): string[] {
   if (env.NODE_ENV !== 'production') return [];
@@ -59,7 +88,10 @@ export function validateEnv(config: Record<string, unknown>) {
       .join('; ');
     throw new Error(`Invalid environment: ${details}`);
   }
-  const issues = productionIssues(parsed.data);
+  const issues = [
+    ...paystackIssues(parsed.data),
+    ...productionIssues(parsed.data),
+  ];
   if (issues.length) {
     throw new Error(`Invalid environment: ${issues.join('; ')}`);
   }

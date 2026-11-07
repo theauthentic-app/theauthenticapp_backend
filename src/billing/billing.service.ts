@@ -1,5 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import type { Prisma } from '@prisma/client';
 import { AppError } from '../common/errors/app-error';
+import { env } from '../common/utils/env.util';
 import { publicId } from '../common/utils/crypto.util';
 import { PrismaService } from '../database/prisma.service';
 import { AuditService } from '../audit/audit.service';
@@ -20,8 +22,28 @@ import {
   type PaginationInput,
 } from '../common/utils/pagination.util';
 
+const PERIOD_MS = 30 * 86_400_000;
+const STALE_PENDING_MS = 24 * 3_600_000;
+const PAYSTACK_STILL_OPEN = new Set([
+  'abandoned',
+  'ongoing',
+  'pending',
+  'processing',
+  'queued',
+]);
+/** Webhook outcomes Paystack retrying would not change. */
+const WEBHOOK_FINAL_CODES = new Set([
+  'PAYMENT_NOT_FOUND',
+  'PAYMENT_FAILED',
+  'PAYMENT_MISMATCH',
+]);
+
+type DbClient = Prisma.TransactionClient;
+
 @Injectable()
 export class BillingService {
+  private readonly logger = new Logger(BillingService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly paystack: PaystackService,
@@ -48,6 +70,7 @@ export class BillingService {
     return {
       provider: this.paystack.enabled() ? 'paystack' : 'invoice',
       enabled: this.paystack.enabled(),
+      mode: this.paystack.mode(),
       publicKey: this.paystack.publicKey(),
     };
   }
@@ -135,12 +158,16 @@ export class BillingService {
       return this.markInvoice(organizationId, planCode, acceptedTermsVersion);
     }
 
+    if (callbackUrl) this.assertCallbackUrl(callbackUrl);
+
     const reference = publicId('pay', 18);
     const amountKobo = plan.monthlyNgn * 100;
-    const web = process.env.APP_WEB_URL ?? 'http://localhost:3001';
+    const currency = 'NGN';
+    const web = env('APP_WEB_URL', 'http://localhost:3001');
     const checkout = await this.paystack.initialize({
       email: actor.email,
       amountKobo,
+      currency,
       reference,
       callbackUrl:
         callbackUrl ?? `${web}/app?payment=return&reference=${reference}`,
@@ -156,6 +183,7 @@ export class BillingService {
         organizationId,
         planCode,
         amountKobo,
+        currency,
         reference,
         status: 'PENDING',
         provider: 'paystack',
@@ -196,21 +224,72 @@ export class BillingService {
     if (payment.status === 'SUCCESS') {
       return { reference, status: 'SUCCESS', alreadyProcessed: true };
     }
-    const verified = await this.paystack.verify(reference);
-    if (verified.status !== 'success') {
-      await this.prisma.payment.update({
-        where: { id: payment.id },
+    const tx = await this.paystack.verify(reference);
+    const txStatus = tx.status.toLowerCase();
+
+    if (PAYSTACK_STILL_OPEN.has(txStatus)) {
+      return {
+        reference,
+        status: 'PENDING',
+        alreadyProcessed: false,
+        message:
+          'Paystack has not confirmed this payment yet. If you were charged, it will activate automatically.',
+      };
+    }
+
+    if (txStatus !== 'success') {
+      await this.prisma.payment.updateMany({
+        where: { id: payment.id, status: { not: 'SUCCESS' } },
         data: { status: 'FAILED' },
       });
       throw new AppError(
         'PAYMENT_FAILED',
-        'Paystack has not confirmed this payment.',
+        tx.gateway_response || 'Paystack did not approve this payment.',
         402,
       );
     }
-    await this.activatePaidPlan(
+
+    if (
+      tx.amount !== payment.amountKobo ||
+      tx.currency?.toUpperCase() !== payment.currency.toUpperCase()
+    ) {
+      await this.prisma.payment.updateMany({
+        where: { id: payment.id, status: { not: 'SUCCESS' } },
+        data: { status: 'AMOUNT_MISMATCH' },
+      });
+      this.logger.error(
+        `Paystack ${reference}: paid ${tx.amount} ${tx.currency}, expected ${payment.amountKobo} ${payment.currency}. Plan not activated.`,
+      );
+      throw new AppError(
+        'PAYMENT_MISMATCH',
+        'The amount paid does not match this plan. Contact support with your payment reference.',
+        402,
+      );
+    }
+
+    const planCode = payment.planCode as PlanCode;
+    const paidAt = tx.paid_at ? new Date(tx.paid_at) : new Date();
+    const activated = await this.prisma.$transaction(async (db) => {
+      const claimed = await db.payment.updateMany({
+        where: { id: payment.id, status: { not: 'SUCCESS' } },
+        data: { status: 'SUCCESS', paidAt },
+      });
+      if (claimed.count === 0) return false;
+      await this.writeActivePlan(
+        db,
+        payment.organizationId,
+        planCode,
+        reference,
+        'paystack',
+      );
+      return true;
+    });
+    if (!activated) {
+      return { reference, status: 'SUCCESS', alreadyProcessed: true };
+    }
+    await this.afterActivation(
       payment.organizationId,
-      payment.planCode as PlanCode,
+      planCode,
       reference,
       'paystack',
     );
@@ -221,14 +300,56 @@ export class BillingService {
     if (!this.paystack.verifySignature(rawBody, signature)) {
       throw new AppError('INVALID_SIGNATURE', 'Invalid Paystack signature.', 401);
     }
-    const event = JSON.parse(rawBody.toString('utf8')) as {
-      event?: string;
-      data?: { reference?: string; status?: string };
-    };
+    let event: { event?: string; data?: { reference?: string } };
+    try {
+      event = JSON.parse(rawBody.toString('utf8')) as typeof event;
+    } catch {
+      throw new AppError('INVALID_PAYLOAD', 'Webhook body is not JSON.', 400);
+    }
     if (event.event !== 'charge.success' || !event.data?.reference) {
       return { ignored: true, event: event.event ?? null };
     }
-    return this.verifyReference(event.data.reference);
+    try {
+      return await this.verifyReference(event.data.reference);
+    } catch (error) {
+      if (error instanceof AppError && WEBHOOK_FINAL_CODES.has(error.code)) {
+        this.logger.warn(
+          `Paystack webhook ${event.data.reference}: ${error.code}`,
+        );
+        return { ignored: true, event: event.event, reason: error.code };
+      }
+      throw error;
+    }
+  }
+
+  async listPayments(organizationId: string, query?: PaginationInput) {
+    const { page, limit, skip, take } = paginationOf(query);
+    const where = { organizationId };
+    const [rows, total] = await this.prisma.$transaction([
+      this.prisma.payment.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take,
+      }),
+      this.prisma.payment.count({ where }),
+    ]);
+    return paginatedResult(
+      rows.map((row) => ({
+        reference: row.reference,
+        planCode: row.planCode,
+        planName: this.planOf(row.planCode).name,
+        amountKobo: row.amountKobo,
+        currency: row.currency,
+        status: row.status,
+        provider: row.provider,
+        paidAt: row.paidAt,
+        createdAt: row.createdAt,
+      })),
+      total,
+      page,
+      limit,
+    );
   }
 
   async activatePaidPlan(
@@ -238,9 +359,33 @@ export class BillingService {
     provider: 'paystack' | 'invoice',
     actorUserId?: string,
   ) {
+    await this.writeActivePlan(
+      this.prisma,
+      organizationId,
+      planCode,
+      reference,
+      provider,
+    );
+    await this.afterActivation(
+      organizationId,
+      planCode,
+      reference,
+      provider,
+      actorUserId,
+    );
+    return { organizationId, planCode, status: 'ACTIVE', provider };
+  }
+
+  private async writeActivePlan(
+    db: DbClient,
+    organizationId: string,
+    planCode: PlanCode,
+    reference: string | null,
+    provider: 'paystack' | 'invoice',
+  ) {
     const now = new Date();
-    const periodEnd = new Date(now.getTime() + 30 * 86_400_000);
-    await this.prisma.subscription.upsert({
+    const periodEnd = new Date(now.getTime() + PERIOD_MS);
+    await db.subscription.upsert({
       where: { organizationId },
       update: {
         planCode,
@@ -261,12 +406,15 @@ export class BillingService {
         paymentProvider: provider,
       },
     });
-    if (reference) {
-      await this.prisma.payment.updateMany({
-        where: { reference },
-        data: { status: 'SUCCESS', paidAt: now },
-      });
-    }
+  }
+
+  private async afterActivation(
+    organizationId: string,
+    planCode: PlanCode,
+    reference: string | null,
+    provider: 'paystack' | 'invoice',
+    actorUserId?: string,
+  ) {
     await this.audit.record({
       action: 'SUBSCRIPTION_UPDATED',
       actorUserId,
@@ -280,7 +428,6 @@ export class BillingService {
       template: 'payment-received',
       context: { planName: plan.name, reference: reference ?? 'invoice' },
     });
-    return { organizationId, planCode, status: 'ACTIVE', provider };
   }
 
   async renew(
@@ -302,6 +449,14 @@ export class BillingService {
   async reconcileSubscriptions() {
     const now = new Date();
     const soon = new Date(now.getTime() + 3 * 86_400_000);
+    // A late charge.success webhook can still activate an ABANDONED payment.
+    const abandoned = await this.prisma.payment.updateMany({
+      where: {
+        status: 'PENDING',
+        createdAt: { lt: new Date(now.getTime() - STALE_PENDING_MS) },
+      },
+      data: { status: 'ABANDONED' },
+    });
     const expired = await this.prisma.subscription.findMany({
       where: {
         status: { in: ['ACTIVE', 'TRIALING'] },
@@ -367,6 +522,7 @@ export class BillingService {
       expired: expired.length,
       trialEnding: trialEnding.length,
       periodEnding: periodEnding.length,
+      abandonedPayments: abandoned.count,
     };
   }
 
@@ -547,6 +703,43 @@ export class BillingService {
             : 'Paystack keys are not set. An admin will activate this plan after invoice payment. Add PAYSTACK_SECRET_KEY to enable checkout automatically.',
       },
     };
+  }
+
+  private assertCallbackUrl(callbackUrl: string) {
+    const allowed = this.allowedCallbackOrigins();
+    let origin: string;
+    try {
+      origin = new URL(callbackUrl).origin;
+    } catch {
+      throw new AppError('INVALID_CALLBACK_URL', 'callbackUrl is not a valid URL.', 400);
+    }
+    if (!allowed.has(origin)) {
+      throw new AppError(
+        'INVALID_CALLBACK_URL',
+        `callbackUrl must be on an AUTHENTIC origin (${[...allowed].join(', ')}). Add yours to BILLING_CALLBACK_ORIGINS.`,
+        400,
+      );
+    }
+  }
+
+  private allowedCallbackOrigins(): Set<string> {
+    const candidates = [
+      env('APP_WEB_URL'),
+      env('API_BASE_URL'),
+      ...(env('CORS_ORIGINS') ?? '').split(','),
+      ...(env('BILLING_CALLBACK_ORIGINS') ?? '').split(','),
+    ];
+    const origins = new Set<string>();
+    for (const candidate of candidates) {
+      const value = candidate?.trim();
+      if (!value) continue;
+      try {
+        origins.add(new URL(value).origin);
+      } catch {
+        // ignore malformed entries
+      }
+    }
+    return origins;
   }
 
   private assertActive(status: string) {

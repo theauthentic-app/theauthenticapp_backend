@@ -341,8 +341,9 @@ Generate `data` example:
 | `POST` | `/billing/renew` | `{ acceptedTermsVersion }` |
 | `GET` | `/public/pricing` | Public plan catalog |
 | `GET` | `/public/legal/terms` | Use `version` as `acceptedTermsVersion` |
-| `GET` | `/public/billing/config` | `{ provider: "paystack"\|"invoice", enabled, publicKey }` |
+| `GET` | `/public/billing/config` | `{ provider: "paystack"\|"invoice", enabled, mode: "test"\|"live"\|null, publicKey }` |
 | `GET` | `/billing/paystack/verify?reference=` | After Paystack redirect |
+| `GET` | `/billing/payments` | Payment / invoice history (`page`, `limit`). OWNER, ADMIN, MANAGER |
 
 Subscribe when Paystack is live:
 
@@ -359,6 +360,18 @@ Subscribe when Paystack is live:
 ```
 
 Frontend: `window.location = data.payment.authorizationUrl`, then on return call `/billing/paystack/verify?reference=…`.
+
+- `callbackUrl` must be on the web app origin (`APP_WEB_URL`, `CORS_ORIGINS`, or `BILLING_CALLBACK_ORIGINS`), otherwise `400 INVALID_CALLBACK_URL`.
+- When there's no Paystack key, `subscribe` returns `status: "INVOICE_PENDING"` with no `authorizationUrl`. Show "We'll send an invoice" instead of redirecting.
+
+Verify responses:
+
+| Response | Show |
+| --- | --- |
+| `200 { status: "SUCCESS" }` | Plan active. Refresh `GET /billing`. |
+| `200 { status: "PENDING", message }` | "Confirming your payment…". Poll every 3–5 s for up to a minute; the webhook usually activates it. |
+| `402 PAYMENT_FAILED` | Card declined. Offer to retry `POST /billing/subscribe`. |
+| `402 PAYMENT_MISMATCH` | "Contact support" with the reference. |
 
 Dashboard `data` includes: `totalScans`, `verified`, `alerts`, `trend[]`, `recent[]`, `quota`, `plan`.
 

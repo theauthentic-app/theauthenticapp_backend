@@ -3,28 +3,35 @@ import { createHmac, timingSafeEqual } from 'crypto';
 import { AppError } from '../common/errors/app-error';
 import { env } from '../common/utils/env.util';
 
-type PaystackInitializeResponse = {
+const PAYSTACK_API = 'https://api.paystack.co';
+const REQUEST_TIMEOUT_MS = 15_000;
+
+type PaystackEnvelope<T> = {
   status: boolean;
   message: string;
-  data?: {
-    authorization_url: string;
-    access_code: string;
-    reference: string;
-  };
+  data?: T;
 };
 
-type PaystackVerifyResponse = {
-  status: boolean;
-  message: string;
-  data?: {
-    status: string;
-    reference: string;
-    amount: number;
-    currency: string;
-    customer?: { email?: string };
-    metadata?: Record<string, unknown>;
-  };
+type PaystackInitializeData = {
+  authorization_url: string;
+  access_code: string;
+  reference: string;
 };
+
+/** `status` is one of: success, failed, abandoned, ongoing, pending, processing, queued, reversed. */
+export type PaystackTransaction = {
+  status: string;
+  reference: string;
+  amount: number;
+  currency: string;
+  paid_at?: string | null;
+  channel?: string;
+  gateway_response?: string;
+  customer?: { email?: string };
+  metadata?: Record<string, unknown> | string | null;
+};
+
+export type PaystackMode = 'test' | 'live';
 
 @Injectable()
 export class PaystackService {
@@ -38,33 +45,34 @@ export class PaystackService {
     return env('PAYSTACK_PUBLIC_KEY') ?? null;
   }
 
+  mode(): PaystackMode | null {
+    const secret = env('PAYSTACK_SECRET_KEY');
+    if (!secret) return null;
+    return secret.startsWith('sk_live_') ? 'live' : 'test';
+  }
+
   async initialize(input: {
     email: string;
     amountKobo: number;
+    currency: string;
     reference: string;
     callbackUrl: string;
     metadata: Record<string, string>;
-  }) {
-    const secret = this.requireSecret();
-    const response = await fetch(
-      'https://api.paystack.co/transaction/initialize',
+  }): Promise<PaystackInitializeData> {
+    const body = await this.request<PaystackInitializeData>(
+      '/transaction/initialize',
       {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${secret}`,
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           email: input.email,
           amount: input.amountKobo,
-          currency: 'NGN',
+          currency: input.currency,
           reference: input.reference,
           callback_url: input.callbackUrl,
           metadata: input.metadata,
         }),
       },
     );
-    const body = (await response.json()) as PaystackInitializeResponse;
     if (!body.status || !body.data) {
       this.logger.warn(`Paystack initialize failed: ${body.message}`);
       throw new AppError(
@@ -76,13 +84,11 @@ export class PaystackService {
     return body.data;
   }
 
-  async verify(reference: string) {
-    const secret = this.requireSecret();
-    const response = await fetch(
-      `https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`,
-      { headers: { Authorization: `Bearer ${secret}` } },
+  async verify(reference: string): Promise<PaystackTransaction> {
+    const body = await this.request<PaystackTransaction>(
+      `/transaction/verify/${encodeURIComponent(reference)}`,
+      { method: 'GET' },
     );
-    const body = (await response.json()) as PaystackVerifyResponse;
     if (!body.status || !body.data) {
       throw new AppError(
         'PAYSTACK_ERROR',
@@ -100,6 +106,41 @@ export class PaystackService {
     const left = Buffer.from(digest);
     const right = Buffer.from(signature);
     return left.length === right.length && timingSafeEqual(left, right);
+  }
+
+  private async request<T>(
+    path: string,
+    init: { method: 'GET' | 'POST'; body?: string },
+  ): Promise<PaystackEnvelope<T>> {
+    const secret = this.requireSecret();
+    let response: Response;
+    try {
+      response = await fetch(`${PAYSTACK_API}${path}`, {
+        method: init.method,
+        body: init.body,
+        headers: {
+          Authorization: `Bearer ${secret}`,
+          'Content-Type': 'application/json',
+        },
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+      });
+    } catch (error) {
+      this.logger.warn(`Paystack ${path} unreachable: ${String(error)}`);
+      throw new AppError(
+        'PAYSTACK_UNAVAILABLE',
+        'Paystack is not responding. Try again in a moment.',
+        502,
+      );
+    }
+    try {
+      return (await response.json()) as PaystackEnvelope<T>;
+    } catch {
+      throw new AppError(
+        'PAYSTACK_ERROR',
+        `Paystack returned an unreadable response (HTTP ${response.status}).`,
+        502,
+      );
+    }
   }
 
   private requireSecret(): string {

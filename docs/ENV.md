@@ -162,12 +162,34 @@ Leave empty until you have keys. Empty = invoice + `POST /admin/organizations/:i
 | --- | --- |
 | `PAYSTACK_SECRET_KEY` | [dashboard.paystack.com](https://dashboard.paystack.com) → **Settings → API Keys & Webhooks**. Use **test** keys locally (`sk_test_...`). Live keys start with `sk_live_`. |
 | `PAYSTACK_PUBLIC_KEY` | Same page (`pk_test_...` / `pk_live_...`). Returned by `GET /public/billing/config` for the browser. |
+| `BILLING_CALLBACK_ORIGINS` | Optional, comma-separated. Extra origins allowed as the Paystack return URL. `APP_WEB_URL`, `API_BASE_URL` and `CORS_ORIGINS` are always allowed. |
+
+Boot fails if a key is malformed (for example a `pk_` pasted into the secret) or if one key is test and the other live. Empty values mean "not configured".
 
 Webhook URL to paste in Paystack:
 
 `https://your-api-host/api/v1/billing/paystack/webhook`
 
 Local testing: [Paystack CLI](https://paystack.com/docs/tools/cli) or a tunnel (ngrok / Cloudflare Tunnel) pointing at `localhost:3001`.
+
+### Go-live checklist
+
+1. In Paystack, switch to **Test mode** and copy `sk_test_…` / `pk_test_…`.
+2. On Render, set `PAYSTACK_SECRET_KEY`, `PAYSTACK_PUBLIC_KEY`, and `APP_WEB_URL` to the web app origin (for example `https://authentic-web-platform.vercel.app`). Redeploy.
+3. In Paystack → **Settings → API Keys & Webhooks**, set the test webhook URL to `https://theauthenticapp-backend.onrender.com/api/v1/billing/paystack/webhook`.
+4. Check `GET /health`: `payments` should show `provider: "paystack"`, `ready: true` and `mode: "test"`.
+5. Subscribe to Starter with Paystack's test card `4084 0840 8408 4081` (any future expiry, CVV `408`, PIN `0000`, OTP `123456`). Confirm `GET /billing` shows `ACTIVE` and `GET /billing/payments` shows `SUCCESS`.
+6. Repeat 2–4 with `sk_live_…` / `pk_live_…` and the **live** webhook URL. `mode` turns `"live"`.
+
+### How a payment moves
+
+| Payment status | Meaning |
+| --- | --- |
+| `PENDING` | Checkout started, not paid yet. |
+| `SUCCESS` | Paystack confirmed the exact amount and currency. Plan activated once, even if the webhook and the browser return arrive together. |
+| `FAILED` | Paystack declined or reversed the charge. |
+| `AMOUNT_MISMATCH` | Paystack reported a different amount or currency. Plan **not** activated; reconcile manually. |
+| `ABANDONED` | Still pending after 24 hours (hourly job). A late `charge.success` still activates it. |
 
 ---
 
@@ -248,6 +270,7 @@ R2_PUBLIC_BASE_URL=
 
 PAYSTACK_SECRET_KEY=
 PAYSTACK_PUBLIC_KEY=
+BILLING_CALLBACK_ORIGINS=
 
 ORG_KYC_REQUIRED=false
 SWAGGER_ENABLED=true

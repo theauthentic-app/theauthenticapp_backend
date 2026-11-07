@@ -3,11 +3,13 @@ import {
   Controller,
   Get,
   Headers,
+  HttpCode,
   Post,
   Query,
   Req,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { SkipThrottle } from '@nestjs/throttler';
 import { OrganizationMemberRole } from '@prisma/client';
 import type { RawBodyRequest } from '@nestjs/common';
 import type { Request } from 'express';
@@ -24,6 +26,7 @@ import {
 import type { AuthUser } from '../common/decorators/current-user.decorator';
 import { PartnerAuth } from '../common/decorators/partner-auth.decorator';
 import { AppError } from '../common/errors/app-error';
+import { PaginationQueryDto } from '../common/dto/pagination.dto';
 import { BillingService } from './billing.service';
 import { RenewDto, SubscribeDto, VerifyPaymentDto } from './dto/billing.dto';
 
@@ -76,6 +79,22 @@ export class BillingController {
   @ApiOperation({ summary: 'Plan, usage, remaining quotas, and payment status' })
   snapshot(@OrganizationId() organizationId: string) {
     return this.billing.snapshot(organizationId);
+  }
+
+  @ApiBearerAuth('bearer')
+  @HumanOnly()
+  @OrgRoles(
+    OrganizationMemberRole.OWNER,
+    OrganizationMemberRole.ADMIN,
+    OrganizationMemberRole.MANAGER,
+  )
+  @Get('billing/payments')
+  @ApiOperation({ summary: 'Payment and invoice history for this organization' })
+  payments(
+    @OrganizationId() organizationId: string,
+    @Query() query: PaginationQueryDto,
+  ) {
+    return this.billing.listPayments(organizationId, query);
   }
 
   @ApiBearerAuth('bearer')
@@ -135,8 +154,12 @@ export class BillingController {
   }
 
   @Public()
+  @SkipThrottle()
+  @HttpCode(200)
   @Post('billing/paystack/webhook')
-  @ApiOperation({ summary: 'Paystack charge.success webhook' })
+  @ApiOperation({
+    summary: 'Paystack charge.success webhook (Paystack retries anything but 200)',
+  })
   webhook(
     @Req() req: RawBodyRequest<Request>,
     @Headers('x-paystack-signature') signature?: string,

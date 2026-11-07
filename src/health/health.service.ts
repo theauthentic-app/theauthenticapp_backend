@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { PaystackService } from '../billing/paystack.service';
 import { BlockchainService } from '../blockchain/blockchain.service';
 import { PrismaService } from '../database/prisma.service';
 import { RedisService } from '../redis/redis.service';
@@ -11,6 +12,7 @@ export class HealthService {
     private readonly redis: RedisService,
     private readonly config: ConfigService,
     private readonly blockchain: BlockchainService,
+    private readonly paystack: PaystackService,
   ) {}
 
   async check() {
@@ -73,8 +75,9 @@ export class HealthService {
         ),
       },
       payments: {
-        provider: this.config.get('PAYSTACK_SECRET_KEY') ? 'paystack' : 'invoice',
-        ready: Boolean(this.config.get('PAYSTACK_SECRET_KEY')),
+        provider: this.paystack.enabled() ? 'paystack' : 'invoice',
+        ready: this.paystack.enabled(),
+        mode: this.paystack.mode(),
       },
       blockchain: {
         enabled: chain.enabled,

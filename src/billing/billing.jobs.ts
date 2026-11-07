@@ -11,9 +11,14 @@ export class BillingJobs {
   @Cron(CronExpression.EVERY_HOUR)
   async reconcile() {
     const result = await this.billing.reconcileSubscriptions();
-    if (result.expired || result.trialEnding || result.periodEnding) {
+    if (
+      result.expired ||
+      result.trialEnding ||
+      result.periodEnding ||
+      result.abandonedPayments
+    ) {
       this.logger.log(
-        `Billing reconcile expired=${result.expired} trialEnding=${result.trialEnding} periodEnding=${result.periodEnding}`,
+        `Billing reconcile expired=${result.expired} trialEnding=${result.trialEnding} periodEnding=${result.periodEnding} abandonedPayments=${result.abandonedPayments}`,
       );
     }
   }
